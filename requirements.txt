@@ -1,0 +1,5 @@
+flask>1.1
+flask_sqlalchemy
+pymysql
+pyjwt
+flask_caching

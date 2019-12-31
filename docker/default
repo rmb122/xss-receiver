@@ -1,0 +1,23 @@
+server {
+        listen 80 default_server;
+        server_name _;
+        root /app/static/;
+
+        # reverse proxy
+        location / {
+                try_files $uri @uwsgi;
+        }
+
+        location @uwsgi {
+            include uwsgi_params;
+            uwsgi_pass                      unix:/tmp/app.sock;
+            uwsgi_param Host                $host;
+            uwsgi_param X-Real-IP           $http_x_real_ip; # get the read ip from proxy
+        }
+
+        proxy_http_version      1.1;
+        proxy_cache_bypass      $http_upgrade;
+        proxy_set_header Upgrade        $http_upgrade;
+        proxy_set_header Connection     "upgrade";
+        proxy_set_header Host           $host;
+}
