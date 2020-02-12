@@ -1,5 +1,5 @@
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 
 SQLALCHEMY_DATABASE_URI = 'sqlite:///../app.db'
 # SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://user:pass@localhost:3306/dbname'

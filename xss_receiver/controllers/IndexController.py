@@ -2,7 +2,7 @@ from base64 import b64encode
 from json import dumps
 from os.path import exists, join
 
-from flask import Blueprint, request, send_file
+from flask import Blueprint, request, send_file, make_response
 from werkzeug.utils import secure_filename
 from xss_receiver.Config import ALLOWED_METHODS, UPLOAD_PATH, BEHIND_PROXY, TEMP_FILE_PATH
 
@@ -19,6 +19,12 @@ index_controller = Blueprint('index_controller', __name__, static_folder=None, t
 @index_controller.route('/<path:path>', methods=ALLOWED_METHODS)
 @file_nocache
 def mapping(path=''):
+    if request.method == 'OPTIONS':
+        response = make_response('', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = '*'
+        return response
+
     path = request.path
     rule = Rule.query.filter_by(path=path).first()
     if rule:
