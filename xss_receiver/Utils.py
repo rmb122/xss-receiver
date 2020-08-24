@@ -2,7 +2,7 @@ import random
 from functools import wraps
 from hashlib import sha256
 
-from flask import Flask, Response, make_response
+from flask import Flask, Response, make_response, request
 
 
 def random_string(len):
@@ -26,7 +26,8 @@ def file_nocache(func):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
-        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
         response.headers['Access-Control-Allow-Headers'] = '*'
         return response
 

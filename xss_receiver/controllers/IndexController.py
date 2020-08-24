@@ -21,8 +21,6 @@ index_controller = Blueprint('index_controller', __name__, static_folder=None, t
 def mapping(path=''):
     if request.method == 'OPTIONS':
         response = make_response('', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = '*'
         return response
 
     path = request.path
