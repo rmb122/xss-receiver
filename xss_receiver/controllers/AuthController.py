@@ -19,7 +19,7 @@ def login():
         username = request.json.get('username', None)
 
         if isinstance(username, str) and isinstance(password, str) and compare_digest(cached_config.ADMIN_PASSWORD, passwd_hash(password, LOGIN_SALT)):
-            token = sign_token().decode()
+            token = sign_token()
             system_log = SystemLog(log_content=f'Admin login with username [{username}]')
             db.session.add(system_log)
             db.session.commit()
