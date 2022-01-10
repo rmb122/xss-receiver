@@ -1,4 +1,4 @@
-from xss_receiver.Config import URL_PREFIX
+from xss_receiver.config import URL_PREFIX
 
 from xss_receiver import app
 from .AccessLogController import access_log_controller

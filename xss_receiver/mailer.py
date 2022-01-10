@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 from threading import Thread
-from xss_receiver import Config, cached_config
+from xss_receiver import config, cached_config
 
 
 class Mailer:

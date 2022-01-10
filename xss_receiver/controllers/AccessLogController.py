@@ -3,9 +3,9 @@ from math import ceil
 from flask import Blueprint, request, jsonify
 
 from xss_receiver import db, ip2Region
-from xss_receiver.JWTAuth import auth_required
-from xss_receiver.Models import AccessLog
-from xss_receiver.Response import Response, PagedResponse
+from xss_receiver.jwt_auth import auth_required
+from xss_receiver.models import AccessLog
+from xss_receiver.response import Response, PagedResponse
 
 access_log_controller = Blueprint('access_log_controller', __name__, static_folder=None, template_folder=None)
 

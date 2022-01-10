@@ -1,33 +1,36 @@
 from sys import modules
-
-from flask_caching import Cache
-from flask_sqlalchemy import SQLAlchemy
-
-from xss_receiver import JWTAuth
-from xss_receiver.Config import URL_PREFIX
-from xss_receiver.Utils import NoServerHeaderFlask
+# from xss_receiver import jwt_auth
+import sanic
+from xss_receiver.config import Config
 from xss_receiver.asserts.ip2region import Ip2Region
 
-app = NoServerHeaderFlask(__name__, static_folder=None, template_folder=None)
-app.config.from_pyfile('Config.py')
-app.config['SESSION_COOKIE_PATH'] = f'{URL_PREFIX}/admin/'
-JWTAuth.init_app(app)
-cache = Cache()
+app = sanic.Sanic(__name__)
+config = Config()
 
-if modules.get('uwsgi'):
-    cache.init_app(app, config={'CACHE_TYPE': 'uwsgi', 'CACHE_UWSGI_NAME': 'xss', 'CACHE_DEFAULT_TIMEOUT': 0})
-else:
-    cache.init_app(app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/dev/shm/', 'CACHE_OPTIONS': {'mode': 0o600}, 'CACHE_DEFAULT_TIMEOUT': 0})
+import xss_receiver.response
 
-db = SQLAlchemy(app)
+@app.route('/')
+def index(request):
+    print(config.RECV_MAIL_ADDR)
+    return sanic.response.text('123')
+
+
+@app.route('/set', methods=["POST"])
+def set(request: sanic.Request):
+    config.RECV_MAIL_ADDR = request.form['asd']
+    return sanic.response.text('123')
+
+'''
+
 ip2Region = Ip2Region(f'{app.root_path}/asserts/ip2region.db')
 
 from xss_receiver.CachedConfig import CachedConfig
 
 cached_config = CachedConfig()
 
-from xss_receiver import Models
+from xss_receiver import models
 
 db.create_all()
 
 from xss_receiver import controllers
+'''

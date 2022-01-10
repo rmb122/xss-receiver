@@ -4,13 +4,13 @@ from os.path import exists, join
 
 from flask import Blueprint, request, send_file, make_response
 from werkzeug.utils import secure_filename
-from xss_receiver.Config import ALLOWED_METHODS, UPLOAD_PATH, BEHIND_PROXY, TEMP_FILE_PATH
+from xss_receiver.config import ALLOWED_METHODS, UPLOAD_PATH, BEHIND_PROXY, TEMP_FILE_PATH
 
-from xss_receiver import Constants
+from xss_receiver import constants
 from xss_receiver import db, cached_config
-from xss_receiver.Mailer import Mailer
-from xss_receiver.Models import AccessLog, Rule
-from xss_receiver.Utils import file_nocache, random_string
+from xss_receiver.mailer import Mailer
+from xss_receiver.models import AccessLog, Rule
+from xss_receiver.utils import file_nocache, random_string
 
 index_controller = Blueprint('index_controller', __name__, static_folder=None, template_folder=None)
 

@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 
 from xss_receiver import db
-from xss_receiver.JWTAuth import auth_required
-from xss_receiver.Models import Rule
-from xss_receiver.Response import Response
+from xss_receiver.jwt_auth import auth_required
+from xss_receiver.models import Rule
+from xss_receiver.response import Response
 
 rule_controller = Blueprint('rule_controller', __name__, static_folder=None, template_folder=None)
 

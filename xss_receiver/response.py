@@ -1,3 +1,4 @@
+import dataclasses
 from dataclasses import dataclass
 
 
@@ -13,7 +14,7 @@ class Response:
         self.code = 200
         self.msg = msg
         self.payload = payload
-        return self
+        return dataclasses.asdict(self)
 
     @staticmethod
     def failed(msg="", payload=None):
@@ -21,7 +22,7 @@ class Response:
         self.code = 201
         self.msg = msg
         self.payload = payload
-        return self
+        return dataclasses.asdict(self)
 
     @staticmethod
     def invalid(msg="", payload=None):
@@ -29,7 +30,7 @@ class Response:
         self.code = 400
         self.msg = msg
         self.payload = payload
-        return self
+        return dataclasses.asdict(self)
 
 
 @dataclass

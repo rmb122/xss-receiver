@@ -1,12 +1,12 @@
 from secrets import compare_digest
 
 from flask import Blueprint, request, jsonify
-from xss_receiver.Config import LOGIN_SALT
+from xss_receiver.config import LOGIN_SALT
 
 from xss_receiver import cached_config
-from xss_receiver.JWTAuth import auth_required
-from xss_receiver.Response import Response
-from xss_receiver.Utils import passwd_hash
+from xss_receiver.jwt_auth import auth_required
+from xss_receiver.response import Response
+from xss_receiver.utils import passwd_hash
 
 config_controller = Blueprint('config_controller', __name__, static_folder=None, template_folder=None)
 

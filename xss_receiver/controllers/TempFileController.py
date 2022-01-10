@@ -3,11 +3,11 @@ from os.path import join, exists, getsize
 
 from flask import Blueprint, request, jsonify, send_file
 from werkzeug.utils import secure_filename
-from xss_receiver.Config import TEMP_FILE_PATH
+from xss_receiver.config import TEMP_FILE_PATH
 
-from xss_receiver.Constants import MAX_PREVIEW_SIZE
-from xss_receiver.JWTAuth import auth_required
-from xss_receiver.Response import Response
+from xss_receiver.constants import MAX_PREVIEW_SIZE
+from xss_receiver.jwt_auth import auth_required
+from xss_receiver.response import Response
 
 temp_file_controller = Blueprint('temp_file_controller', __name__, static_folder=None, template_folder=None)
 
