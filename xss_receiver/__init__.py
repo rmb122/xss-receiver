@@ -1,23 +1,25 @@
-from sys import modules
-# from xss_receiver import jwt_auth
+from os import path
+
 import sanic
-from xss_receiver.config import Config
+
 from xss_receiver.asserts.ip2region import Ip2Region
+from xss_receiver.config import Config
 
 app = sanic.Sanic(__name__)
-config = Config()
+system_config = Config()
 
-'''
+ip2region = Ip2Region(f'{path.dirname(__file__)}/asserts/ip2region.db')
 
-ip2Region = Ip2Region(f'{app.root_path}/asserts/ip2region.db')
 
-from xss_receiver.CachedConfig import CachedConfig
+from xss_receiver import jwt_auth
+# from xss_receiver import controllers
 
-cached_config = CachedConfig()
+@app.route('/login')
+def login(request: sanic.Request):
+    return sanic.response.text(jwt_auth.sign_token())
 
-from xss_receiver import models
 
-db.create_all()
-
-from xss_receiver import controllers
-'''
+@app.route('/')
+@jwt_auth.auth_required
+def index(request: sanic.Request):
+    return sanic.response.text('asd')

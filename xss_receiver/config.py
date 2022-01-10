@@ -19,6 +19,7 @@ class Config:
     # name, from_env
     _CONFIG_KEYS: typing.Dict[str, bool] = {
         'LOGIN_SALT': True,
+        'SECRET_KEY': True,
         'URL_PREFIX': True,
         'BEHIND_PROXY': True,
         'UPLOAD_PATH': True,
@@ -37,6 +38,7 @@ class Config:
 
     _CONFIG_DEFAULTS: typing.Dict[str, typing.Union[str, bool, int]] = {
         'LOGIN_SALT': '',
+        'SECRET_KEY': os.urandom(32),
         'URL_PREFIX': '',
         'BEHIND_PROXY': False,
         'UPLOAD_PATH': '/tmp',
@@ -54,6 +56,7 @@ class Config:
     }
 
     LOGIN_SALT: str
+    SECRET_KEY: str
     URL_PREFIX: str
     BEHIND_PROXY: bool
     UPLOAD_PATH: str
@@ -93,8 +96,11 @@ class Config:
         db_session = session_maker()
 
         for key, from_env in self._CONFIG_KEYS.items():
-            if from_env:
-                _CONFIG_CACHE[key] = os.getenv(key)
+            if from_env:  # 优先从 ENV 中取, 之后取默认值
+                value = os.getenv(key)
+                if value is None:
+                    value = self._CONFIG_DEFAULTS[key]
+                _CONFIG_CACHE[key] = value
             else:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)
                 result: sqlalchemy.engine.result.ChunkedIteratorResult = await db_session.execute(stmt)
@@ -109,7 +115,7 @@ class Config:
         asyncio.run(self._load_configs())
 
     def __setattr__(self, key, value):
-        if key in self._CONFIG_KEYS:
+        if key in self._CONFIG_KEYS and self._CONFIG_KEYS[key]:
             _CONFIG_CACHE[key] = value
 
             async def _update_database():
@@ -124,7 +130,7 @@ class Config:
                 await db_session.close()
             asyncio.create_task(_update_database())
         else:
-            raise Exception(f'Config key {key} not existed')
+            raise Exception(f'Config key {key} not existed or not mutable')
 
     def __getattr__(self, key):
         if key in self._CONFIG_KEYS:
