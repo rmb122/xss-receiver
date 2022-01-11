@@ -18,27 +18,27 @@ _CONFIG_CACHE = _manager.dict()
 
 
 class Config:
-    # name: [from_env, public, mutable, default_value]
-    _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any]] = {
-        'SECRET_KEY': [True, False, False, os.urandom(32)],
-        'URL_PREFIX': [True, False, False, ''],
-        'BEHIND_PROXY': [True, False, False, False],
-        'UPLOAD_PATH': [True, False, False, '/tmp'],
-        'TEMP_FILE_PATH': [True, False, False, '/tmp'],
+    # name: [from_env, public, mutable, default_value, comment]
+    _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any, str]] = {
+        'SECRET_KEY': [True, False, False, os.urandom(32), ''],
+        'URL_PREFIX': [True, False, False, '', ''],
+        'BEHIND_PROXY': [True, False, False, False, ''],
+        'UPLOAD_PATH': [True, False, False, '/tmp', ''],
+        'TEMP_FILE_PATH': [True, False, False, '/tmp', ''],
 
-        'LOGIN_SALT': [False, True, False, os.urandom(32).hex()],
-        'TEMP_FILE_SAVE': [False, True, True, False],
-        'RECV_MAIL_ADDR': [False, True, True, ''],
-        'SEND_MAIL_ADDR': [False, True, True, ''],
-        'SEND_MAIL_PASSWD': [False, True, True, ''],
-        'SEND_MAIL_SMTP_HOST': [False, True, True, ''],
-        'SEND_MAIL_SMTP_PORT': [False, True, True, 465],
-        'SEND_MAIL_SMTP_SSL': [False, True, True, True],
-        'MAX_PREVIEW_SIZE': [False, True, True, 1048576],
-        'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576]
+        'PASSWORD_SALT': [False, False, False, os.urandom(32).hex(), ''],
+        'TEMP_FILE_SAVE': [False, True, True, False, '是否保存临时文件'],
+        'RECV_MAIL_ADDR': [False, True, True, '', '收件地址'],
+        'SEND_MAIL_ADDR': [False, True, True, '', '发件地址'],
+        'SEND_MAIL_PASSWD': [False, True, True, '', '发件邮箱密码'],
+        'SEND_MAIL_SMTP_HOST': [False, True, True, '', 'SMTP 服务器地址'],
+        'SEND_MAIL_SMTP_PORT': [False, True, True, 465, 'SMTP 服务器端口'],
+        'SEND_MAIL_SMTP_SSL': [False, True, True, True, 'SMTP 是否启用 SSL'],
+        'MAX_PREVIEW_SIZE': [False, True, True, 1048576, '最大预览大小'],
+        'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576, '最大临时文件上传大小']
     }
 
-    LOGIN_SALT: str
+    PASSWORD_SALT: str
     SECRET_KEY: str
     URL_PREFIX: str
     BEHIND_PROXY: bool
@@ -80,7 +80,7 @@ class Config:
         count = (await db_session.execute(select(func.count('1')).select_from(User))).scalar()
 
         if count == 0:
-            user = User(username='admin', password=passwd_hash(passwd_hash('admin', self.LOGIN_SALT), self.LOGIN_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
+            user = User(username='admin', password=passwd_hash(passwd_hash('admin', 'admin'), self.PASSWORD_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
             db_session.add(user)
             await db_session.commit()
 
@@ -151,3 +151,6 @@ class Config:
 
     def get_config_type(self, key):
         return type(self._CONFIG_KEYS[key][3])
+
+    def get_config_comment(self, key):
+        return self._CONFIG_KEYS[key][4]

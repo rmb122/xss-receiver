@@ -12,11 +12,18 @@ config_controller = Blueprint('config_controller', __name__)
 @auth_required
 async def modify(request: sanic.Request):
     if isinstance(request.json, dict):
-        for key, value in request.json.items():
+        key = request.json.get('key', None)
+        value = request.json.get('value', None)
+
+        if isinstance(key, str) and value is not None:
             _, mutable = system_config.get_config_privileges(key)
             if mutable and isinstance(value, system_config.get_config_type(key)):
                 setattr(system_config, key, value)
-        return json(Response.success('修改成功'))
+                return json(Response.success('修改成功'))
+            else:
+                return json(Response.failed('目标配置无法修改或者类型不正确'))
+        else:
+            return json(Response.invalid('参数无效'))
     else:
         return json(Response.invalid('参数无效'))
 
@@ -24,6 +31,8 @@ async def modify(request: sanic.Request):
 @config_controller.route('/list', methods=['GET'])
 @auth_required
 async def config_list(request: sanic.Request):
-    return json(Response.success("", {
-        'values': system_config.get_public_config()
-    }))
+    configs = system_config.get_public_config()
+    config_table = []
+    for key, value in configs.items():
+        config_table.append({'key': key, 'value': value, 'comment': system_config.get_config_comment(key)})
+    return json(Response.success("", config_table))

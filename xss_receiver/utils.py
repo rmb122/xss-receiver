@@ -1,4 +1,5 @@
 import random
+import typing
 from functools import wraps
 import aiofiles
 import hashlib
@@ -82,3 +83,20 @@ async def write_file(path, body):
 async def read_file(path):
     async with aiofiles.open(path, 'rb') as f:
         return await f.read()
+
+
+def filter_list(input_dict: typing.Dict):
+    output_dict = {}
+    for key, value in input_dict.items():
+        if isinstance(value, list) and len(value) == 1:
+            output_dict[key] = value[0]
+    return output_dict
+
+
+def fix_upper_case(header_dict: typing.Dict):
+    output_dict = {}
+    for key, value in header_dict.items():
+        key = key.split('-')
+        key = '-'.join([i.capitalize() for i in key])
+        output_dict[key] = value
+    return output_dict

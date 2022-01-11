@@ -7,6 +7,8 @@ from xss_receiver.asserts.ip2region import Ip2Region
 from xss_receiver.config import Config
 
 app = sanic.Sanic(__name__)
+app.config.CORS_ORIGINS = "http://127.0.0.1:8080"
+
 system_config = Config()
 
 from xss_receiver.database import inject_database_session

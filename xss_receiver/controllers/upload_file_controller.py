@@ -39,6 +39,8 @@ async def file_list(request: sanic.Request):
     for filename in files:
         path = join(system_config.UPLOAD_PATH, filename)
         payload.append({'filename': filename, 'size': getsize(path), 'mttime': getmtime(path), 'dir': isdir(path)})
+
+    payload = sorted(payload, key=lambda x: x['filename'])
     return json(Response.success('', payload))
 
 

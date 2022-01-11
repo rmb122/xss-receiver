@@ -13,7 +13,7 @@ from xss_receiver import system_config
 from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
-from xss_receiver.utils import process_headers, random_string, get_region_from_ip, write_file
+from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list
 
 index_controller = sanic.Blueprint('index_controller', __name__)
 
@@ -37,8 +37,9 @@ async def mapping(request: sanic.Request, path=''):
 
     if rule.write_log:
         method = request.method
-        header = dict(request.headers)
-        arg = dict(request.args)
+        header = fix_upper_case(dict(request.headers))
+        arg = filter_list(dict(request.args))
+
         file = {}
 
         content_type = request.headers.get('Content-Type', '').lower()
