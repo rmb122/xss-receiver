@@ -1,71 +1,36 @@
 from math import ceil
 
-from flask import Blueprint, request, jsonify
+import sanic
+from sanic import Blueprint
 
-from xss_receiver import db, ip2Region
+from xss_receiver.database import session_maker
 from xss_receiver.jwt_auth import auth_required
-from xss_receiver.models import AccessLog
+from xss_receiver.models import HttpAccessLog
+from sqlalchemy.future import select
+from sanic.response import json
 from xss_receiver.response import Response, PagedResponse
 
-access_log_controller = Blueprint('access_log_controller', __name__, static_folder=None, template_folder=None)
-
-
-def format_region(region):
-    try:
-        region = region['region'].decode()
-        region = region.split('|')
-        tmp = []
-        for k in region:
-            if k != '0':
-                tmp.append(k)
-            if k == '内网IP':
-                return '局域网'
-        return ''.join(tmp)
-    except Exception:
-        return '解析错误'
-
-
-def get_region_from_ip(ip, ip2Region):
-    if ":" not in ip:
-        region = ""
-        retry = 0
-        while not region and retry < 3:
-            try:
-                region = ip2Region.btreeSearch(ip)
-            except Exception:
-                retry += 1
-                pass
-        if region == "":
-            return "转换中出错"
-        return format_region(region)
-    else:
-        return "不支持 IPv6 查询"
+access_log_controller = Blueprint('access_log_controller', __name__)
 
 
 @access_log_controller.route('/list', methods=['POST'])
 @auth_required
-def list():
+def list(request: sanic.Request):
     if isinstance(request.json, dict):
-        page = request.json.get('page', None)
-        page_size = request.json.get('page_size', None)
-        filter = request.json.get('filter', None)
-
-        if page is None:
-            page = 0
-        if page_size is None:
-            page_size = 35
-        if filter is None:
-            filter = {}
+        page = request.json.get('page', 0)
+        page_size = request.json.get('page_size', 35)
+        filter = request.json.get('filter', {})
 
         if isinstance(page, int) and isinstance(page_size, int) and isinstance(filter, dict):
-            query = db.session.query(AccessLog)
+
+            query = select(HttpAccessLog)
 
             available_filter = {
-                'client_ip': AccessLog.client_ip.__eq__,
-                'path': AccessLog.path.__eq__,
-                'method': AccessLog.method.__eq__,
-                'time_before': AccessLog.log_time.__le__,
-                'time_after': AccessLog.log_time.__ge__
+                'client_ip': HttpAccessLog.client_ip.__eq__,
+                'path': HttpAccessLog.path.__eq__,
+                'method': HttpAccessLog.method.__eq__,
+                'time_before': HttpAccessLog.log_time.__le__,
+                'time_after': HttpAccessLog.log_time.__ge__
             }
 
             for key in filter:
@@ -80,13 +45,13 @@ def list():
                 i.log_time = i.log_time.strftime('%Y-%m-%d %H:%M:%S')
 
             paged = PagedResponse(payload=access_logs, total_page=ceil(count / page_size), curr_page=page)
-            return jsonify(Response.success('', paged))
+            return json(Response.success('', paged))
         else:
-            return jsonify(Response.invalid('无效请求'))
+            return json(Response.invalid('无效请求'))
     else:
-        return jsonify(Response.invalid('无效请求'))
+        return json(Response.invalid('无效请求'))
 
-
+'''
 @access_log_controller.route('/get_last_id', methods=['GET'])
 @auth_required
 def get_last_id():
@@ -110,3 +75,4 @@ def delete_all():
             return jsonify(Response.invalid('无效请求'))
     else:
         return jsonify(Response.invalid('无效请求'))
+'''
