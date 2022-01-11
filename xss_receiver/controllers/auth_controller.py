@@ -120,7 +120,7 @@ async def change_password(request: sanic.Request):
 
 
 @auth_controller.route("/status", methods=['GET'])
-def status(request: sanic.Request):
+async def status(request: sanic.Request):
     if request.ctx.auth:
         return json(Response.success('', request.ctx.user.user_type))
     else:
@@ -128,5 +128,5 @@ def status(request: sanic.Request):
 
 
 @auth_controller.route('/get_salt', methods=['GET'])
-def get_salt(request: sanic.Request):
+async def get_salt(request: sanic.Request):
     return json(Response.success("", system_config.LOGIN_SALT))

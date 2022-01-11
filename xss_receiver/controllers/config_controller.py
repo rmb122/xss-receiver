@@ -10,7 +10,7 @@ config_controller = Blueprint('config_controller', __name__)
 
 @config_controller.route('/modify', methods=['POST'])
 @auth_required
-def modify(request: sanic.Request):
+async def modify(request: sanic.Request):
     if isinstance(request.json, dict):
         for key, value in request.json.items():
             _, mutable = system_config.get_config_privileges(key)
@@ -23,7 +23,7 @@ def modify(request: sanic.Request):
 
 @config_controller.route('/list', methods=['GET'])
 @auth_required
-def list(request: sanic.Request):
+async def list(request: sanic.Request):
     return json(Response.success("", {
         'values': system_config.get_public_config()
     }))
