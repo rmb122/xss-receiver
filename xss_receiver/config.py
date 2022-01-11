@@ -1,15 +1,16 @@
 import asyncio
-import json
 import multiprocessing
 import os
 import typing
 
 import sqlalchemy
+from sqlalchemy import func
 from sqlalchemy.future import select
 
 from xss_receiver import constants
 from xss_receiver.database import session_maker, engine
-from xss_receiver.models import SystemConfig
+from xss_receiver.models import SystemConfig, User
+from xss_receiver.utils import passwd_hash
 
 _manager = multiprocessing.Manager()
 _CONFIG_CACHE = _manager.dict()
@@ -18,13 +19,13 @@ _CONFIG_CACHE = _manager.dict()
 class Config:
     # name, from_env
     _CONFIG_KEYS: typing.Dict[str, bool] = {
-        'LOGIN_SALT': True,
         'SECRET_KEY': True,
         'URL_PREFIX': True,
         'BEHIND_PROXY': True,
         'UPLOAD_PATH': True,
         'TEMP_FILE_PATH': True,
 
+        'LOGIN_SALT': False,
         'TEMP_FILE_SAVE': False,
         'RECV_MAIL_ADDR': False,
         'SEND_MAIL_ADDR': False,
@@ -36,14 +37,16 @@ class Config:
         'MAX_TEMP_UPLOAD_SIZE': False
     }
 
+    _CONFIG_NOT_MUTABLE = {'LOGIN_SALT'}
+
     _CONFIG_DEFAULTS: typing.Dict[str, typing.Union[str, bool, int]] = {
-        'LOGIN_SALT': '',
         'SECRET_KEY': os.urandom(32),
         'URL_PREFIX': '',
         'BEHIND_PROXY': False,
         'UPLOAD_PATH': '/tmp',
         'TEMP_FILE_PATH': '/tmp',
 
+        'LOGIN_SALT': os.urandom(32).hex(),
         'TEMP_FILE_SAVE': False,
         'RECV_MAIL_ADDR': '',
         'SEND_MAIL_ADDR': '',
@@ -72,7 +75,7 @@ class Config:
     MAX_PREVIEW_SIZE: int
     MAX_TEMP_UPLOAD_SIZE: int
 
-    async def _init_database(self):
+    async def _init_configs(self):
         db_session = session_maker()
 
         stmt = select(SystemConfig).where(SystemConfig.key == constants.CONFIG_INIT_KEY)
@@ -80,15 +83,27 @@ class Config:
         data = result.scalar()
 
         if data is None:
-            system_config = SystemConfig(key=constants.CONFIG_INIT_KEY, value=json.dumps(True))
+            system_config = SystemConfig(key=constants.CONFIG_INIT_KEY, value=True)
             db_session.add(system_config)
 
             for key, from_env in self._CONFIG_KEYS.items():
                 if not from_env:
-                    system_config = SystemConfig(key=key, value=json.dumps(self._CONFIG_DEFAULTS[key]))
+                    system_config = SystemConfig(key=key, value=self._CONFIG_DEFAULTS[key])
                     db_session.add(system_config)
 
         await db_session.commit()
+        await db_session.close()
+        await engine.dispose()
+
+    async def _init_admin(self):
+        db_session = session_maker()
+        count = (await db_session.execute(select(func.count('1')).select_from(User))).scalar()
+
+        if count == 0:
+            user = User(username='admin', password=passwd_hash(passwd_hash('admin', self.LOGIN_SALT), self.LOGIN_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
+            db_session.add(user)
+            await db_session.commit()
+
         await db_session.close()
         await engine.dispose()
 
@@ -105,17 +120,18 @@ class Config:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)
                 result: sqlalchemy.engine.result.ChunkedIteratorResult = await db_session.execute(stmt)
                 data: SystemConfig = result.scalar()
-                _CONFIG_CACHE[key] = json.loads(data.value)
+                _CONFIG_CACHE[key] = data.value
 
         await db_session.close()
         await engine.dispose()
 
     def __init__(self):
-        asyncio.run(self._init_database())
+        asyncio.run(self._init_configs())
         asyncio.run(self._load_configs())
+        asyncio.run(self._init_admin())
 
     def __setattr__(self, key, value):
-        if key in self._CONFIG_KEYS and self._CONFIG_KEYS[key]:
+        if key in self._CONFIG_KEYS and key not in self._CONFIG_NOT_MUTABLE:
             _CONFIG_CACHE[key] = value
 
             async def _update_database():
@@ -123,7 +139,7 @@ class Config:
 
                 result = await db_session.execute(select(SystemConfig).where(SystemConfig.key == key))
                 system_config = result.scalar()
-                system_config.value = json.dumps(value)
+                system_config.value = value
                 db_session.add(system_config)
 
                 await db_session.commit()

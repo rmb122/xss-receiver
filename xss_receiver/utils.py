@@ -1,7 +1,7 @@
 import random
 from functools import wraps
 import aiofiles
-from hashlib import sha256
+import hashlib
 
 import sanic
 
@@ -10,8 +10,8 @@ def random_string(len):
     return "".join(random.choices("0123456789abcdef", k=len))
 
 
-def passwd_hash(str, salt):
-    return sha256((str + salt).encode()).hexdigest()
+def passwd_hash(password: str, salt: str):
+    return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 23333).hex()
 
 
 def format_region(region):

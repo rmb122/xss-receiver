@@ -36,7 +36,6 @@ class HttpAccessLog(Base):
     log_id: int = Column(Integer(), primary_key=True, autoincrement=True)
     path: str = Column(String(255), index=True)
     client_ip: str = Column(VARCHAR(30))
-    region: str = Column(VARCHAR(255))
     method: str = Column(VARCHAR(255))
     arg: dict = Column(JSON())
     body: str = Column(Text())
@@ -44,13 +43,14 @@ class HttpAccessLog(Base):
     header: dict = Column(JSON())
     body_type: int = Column(SmallInteger())
     log_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
+    region: str = ''
 
 
 @dataclass
 class SystemConfig(Base):
     __tablename__ = 'system_config'
     key: str = Column(String(255), primary_key=True)
-    value: str = Column(JSON())
+    value: object = Column(JSON())
 
 
 @dataclass
@@ -68,3 +68,4 @@ class User(Base):
     user_id: int = Column(Integer(), primary_key=True, autoincrement=True)
     username: str = Column(String(255), index=True)
     password: str = Column(String(64))
+    user_type: int = Column(Integer())
