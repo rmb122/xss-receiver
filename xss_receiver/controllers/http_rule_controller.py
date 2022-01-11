@@ -1,9 +1,9 @@
 import sanic
 from sanic import Blueprint, json
+from sqlalchemy.future import select
 
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.models import HttpRule
-from sqlalchemy.future import select
 from xss_receiver.response import Response
 
 rule_controller = Blueprint('rule_controller', __name__)
@@ -19,7 +19,8 @@ async def add(request: sanic.Request):
         send_mail = request.json.get('send_mail', None)
         comment = request.json.get('comment', None)
 
-        if isinstance(path, str) and isinstance(filename, str) and isinstance(write_log, bool) and isinstance(send_mail, bool) and isinstance(comment, str):
+        if isinstance(path, str) and isinstance(filename, str) and isinstance(write_log, bool) \
+                and isinstance(send_mail, bool) and isinstance(comment, str):
             query = select(HttpRule).where(HttpRule.path == path)
             rule = (await request.ctx.db_session.execute(query)).scalar()
             if rule is None:
@@ -102,7 +103,7 @@ async def delete(request: sanic.Request):
 
 @rule_controller.route('/list', methods=['GET'])
 @auth_required
-async def list(request: sanic.Request):
+async def http_rule_list(request: sanic.Request):
     rules = (await request.ctx.db_session.execute(select(HttpRule))).scalars()
     rules = [i for i in rules]
 

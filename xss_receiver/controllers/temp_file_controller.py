@@ -1,71 +1,75 @@
 from os import listdir, unlink
 from os.path import join, exists, getsize
 
-from flask import Blueprint, request, jsonify, send_file
+from sanic import Blueprint, json
+import sanic
+from xss_receiver.utils import read_file
 from werkzeug.utils import secure_filename
-from xss_receiver.config import TEMP_FILE_PATH
+from xss_receiver import system_config
 
-from xss_receiver.constants import MAX_PREVIEW_SIZE
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.response import Response
 
-temp_file_controller = Blueprint('temp_file_controller', __name__, static_folder=None, template_folder=None)
+temp_file_controller = Blueprint('temp_file_controller', __name__)
 
 
 @temp_file_controller.route('/delete_all', methods=['POST'])
 @auth_required
-def delete_all():
+async def delete_all(request: sanic.Request):
     if isinstance(request.json, dict):
         delete = request.json.get('delete', None)
+
         if isinstance(delete, bool) and delete:
-            temp_files = listdir(TEMP_FILE_PATH)
+            temp_files = listdir(system_config.TEMP_FILE_PATH)
             for filename in temp_files:
-                path = join(TEMP_FILE_PATH, filename)
+                path = join(system_config.TEMP_FILE_PATH, filename)
                 unlink(path)
-            return jsonify(Response.success("清空成功"))
+            return json(Response.success("清空成功"))
         else:
-            return jsonify(Response.invalid('无效请求'))
+            return json(Response.invalid('无效请求'))
     else:
-        return jsonify(Response.invalid('无效请求'))
+        return json(Response.invalid('无效请求'))
 
 
 @temp_file_controller.route('/download', methods=['POST'])
 @auth_required
-def download():
+async def download(request: sanic.Request):
     if isinstance(request.json, dict):
         filename = request.json.get('filename', None)
         if isinstance(filename, str):
             filename = secure_filename(filename)
-            path = join(TEMP_FILE_PATH, filename)
+            path = join(system_config.TEMP_FILE_PATH, filename)
             if exists(path):
-                return send_file(path, as_attachment=True, attachment_filename=filename)
+                return await sanic.response.file(path, filename=filename)
             else:
-                return jsonify(Response.failed('文件不存在')), 400
+                return json(Response.failed('文件不存在'), 500)
         else:
-            return jsonify(Response.invalid('参数无效')), 400
+            return json(Response.invalid('参数无效'), 400)
     else:
-        return jsonify(Response.invalid('参数无效')), 400
+        return json(Response.invalid('参数无效'), 400)
 
 
 @temp_file_controller.route('/preview', methods=['POST'])
 @auth_required
-def preview():
+async def preview(request: sanic.Request):
     if isinstance(request.json, dict):
         filename = request.json.get('filename', None)
         if isinstance(filename, str):
             filename = secure_filename(filename)
-            path = join(TEMP_FILE_PATH, filename)
-            if exists(path) and getsize(path) < MAX_PREVIEW_SIZE:
-                file = open(path, 'rb')
-                content = file.read()
-                try:
-                    content = content.decode('utf-8')
-                    return jsonify(Response.success('', content))
-                except Exception:
-                    return jsonify(Response.failed('文件过大或者文件不是纯文本, 无法预览'))
+            path = join(system_config.TEMP_FILE_PATH, filename)
+            if exists(path):
+                if getsize(path) < system_config.MAX_PREVIEW_SIZE:
+                    content = await read_file(path)
+                    try:
+                        content = content.decode('utf-8')
+                        return json(Response.success('', content))
+                    except Exception:
+                        return json(Response.failed('文件不是纯文本, 无法预览'))
+                else:
+                    json(Response.failed('文件过大, 无法预览'))
             else:
-                return jsonify(Response.failed('文件不存在'))
+                return json(Response.failed('文件不存在'))
         else:
-            return jsonify(Response.invalid('参数无效'))
+            return json(Response.invalid('参数无效'))
     else:
-        return jsonify(Response.invalid('参数无效'))
+        return json(Response.invalid('参数无效'))

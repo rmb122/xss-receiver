@@ -17,7 +17,7 @@ access_log_controller = Blueprint('access_log_controller', __name__)
 
 @access_log_controller.route('/list', methods=['POST'])
 @auth_required
-async def list(request: sanic.Request):
+async def access_log_list(request: sanic.Request):
     if isinstance(request.json, dict):
         page = request.json.get('page', 0)
         page_size = request.json.get('page_size', 35)

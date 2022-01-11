@@ -23,7 +23,7 @@ async def modify(request: sanic.Request):
 
 @config_controller.route('/list', methods=['GET'])
 @auth_required
-async def list(request: sanic.Request):
+async def config_list(request: sanic.Request):
     return json(Response.success("", {
         'values': system_config.get_public_config()
     }))

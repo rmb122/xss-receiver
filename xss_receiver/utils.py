@@ -77,3 +77,8 @@ def process_headers(func):
 async def write_file(path, body):
     async with aiofiles.open(path, 'wb') as f:
         await f.write(body)
+
+
+async def read_file(path):
+    async with aiofiles.open(path, 'rb') as f:
+        return await f.read()

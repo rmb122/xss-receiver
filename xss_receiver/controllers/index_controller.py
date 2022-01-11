@@ -71,8 +71,8 @@ async def mapping(request: sanic.Request, path=''):
             body_type = constants.BODY_TYPE_TOO_LONG
             body = ""
 
-        access_log = HttpAccessLog(path=path, client_ip=client_ip, method=method, arg=arg, body=body, file=file,
-                                   header=header, body_type=body_type)
+        access_log = HttpAccessLog(path=path, client_ip=client_ip, method=method, arg=arg,
+                                   body=body, file=file, header=header, body_type=body_type)
 
         request.ctx.db_session.add(access_log)
         await request.ctx.db_session.commit()

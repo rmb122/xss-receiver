@@ -5,11 +5,11 @@ import sanic
 from sanic import Blueprint, json
 from sqlalchemy.future import select
 
-from xss_receiver import system_config, constants
+from xss_receiver import system_config, constants, ip2region
 from xss_receiver.jwt_auth import sign_token, auth_required, admin_required
 from xss_receiver.models import SystemLog, User
 from xss_receiver.response import Response
-from xss_receiver.utils import passwd_hash
+from xss_receiver.utils import passwd_hash, get_region_from_ip
 
 auth_controller = Blueprint('auth_controller', __name__)
 
@@ -33,7 +33,7 @@ async def login(request: sanic.Request):
         if isinstance(username, str) and isinstance(password, str) and \
                 (user is not None) and compare_digest(passwd_hash(password, system_config.LOGIN_SALT), user.password):
             token = sign_token(user.user_id)
-            system_log = SystemLog(log_content=f'Login with username [{username}] in [{request.ip}]')
+            system_log = SystemLog(log_content=f'Login with username [{username}] in [{request.ip} | {get_region_from_ip(request.ip, ip2region)}]', log_type=constants.LOG_TYPE_LOGIN)
             request.ctx.db_session.add(system_log)
             await request.ctx.db_session.commit()
             return json(Response.success('登录成功', token))
