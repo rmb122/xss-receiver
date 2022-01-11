@@ -2,6 +2,7 @@ import asyncio
 import multiprocessing
 import os
 import typing
+import json
 
 import sqlalchemy
 from sqlalchemy import func
@@ -17,45 +18,24 @@ _CONFIG_CACHE = _manager.dict()
 
 
 class Config:
-    # name, from_env
-    _CONFIG_KEYS: typing.Dict[str, bool] = {
-        'SECRET_KEY': True,
-        'URL_PREFIX': True,
-        'BEHIND_PROXY': True,
-        'UPLOAD_PATH': True,
-        'TEMP_FILE_PATH': True,
+    # name: [from_env, public, mutable, default_value]
+    _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any]] = {
+        'SECRET_KEY': [True, False, False, os.urandom(32)],
+        'URL_PREFIX': [True, False, False, ''],
+        'BEHIND_PROXY': [True, False, False, False],
+        'UPLOAD_PATH': [True, False, False, '/tmp'],
+        'TEMP_FILE_PATH': [True, False, False, '/tmp'],
 
-        'LOGIN_SALT': False,
-        'TEMP_FILE_SAVE': False,
-        'RECV_MAIL_ADDR': False,
-        'SEND_MAIL_ADDR': False,
-        'SEND_MAIL_PASSWD': False,
-        'SEND_MAIL_SMTP_HOST': False,
-        'SEND_MAIL_SMTP_PORT': False,
-        'SEND_MAIL_SMTP_SSL': False,
-        'MAX_PREVIEW_SIZE': False,
-        'MAX_TEMP_UPLOAD_SIZE': False
-    }
-
-    _CONFIG_NOT_MUTABLE = {'LOGIN_SALT'}
-
-    _CONFIG_DEFAULTS: typing.Dict[str, typing.Union[str, bool, int]] = {
-        'SECRET_KEY': os.urandom(32),
-        'URL_PREFIX': '',
-        'BEHIND_PROXY': False,
-        'UPLOAD_PATH': '/tmp',
-        'TEMP_FILE_PATH': '/tmp',
-
-        'LOGIN_SALT': os.urandom(32).hex(),
-        'TEMP_FILE_SAVE': False,
-        'RECV_MAIL_ADDR': '',
-        'SEND_MAIL_ADDR': '',
-        'SEND_MAIL_PASSWD': '',
-        'SEND_MAIL_SMTP_HOST': '',
-        'SEND_MAIL_SMTP_PORT': 465,
-        'SEND_MAIL_SMTP_SSL': True,
-        'MAX_PREVIEW_SIZE': 1048576,
-        'MAX_TEMP_UPLOAD_SIZE': 1048576
+        'LOGIN_SALT': [False, True, False, os.urandom(32).hex()],
+        'TEMP_FILE_SAVE': [False, True, True, False],
+        'RECV_MAIL_ADDR': [False, True, True, ''],
+        'SEND_MAIL_ADDR': [False, True, True, ''],
+        'SEND_MAIL_PASSWD': [False, True, True, ''],
+        'SEND_MAIL_SMTP_HOST': [False, True, True, ''],
+        'SEND_MAIL_SMTP_PORT': [False, True, True, 465],
+        'SEND_MAIL_SMTP_SSL': [False, True, True, True],
+        'MAX_PREVIEW_SIZE': [False, True, True, 1048576],
+        'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576]
     }
 
     LOGIN_SALT: str
@@ -75,7 +55,7 @@ class Config:
     MAX_PREVIEW_SIZE: int
     MAX_TEMP_UPLOAD_SIZE: int
 
-    async def _init_configs(self):
+    async def _init_config_table(self):
         db_session = session_maker()
 
         stmt = select(SystemConfig).where(SystemConfig.key == constants.CONFIG_INIT_KEY)
@@ -86,9 +66,9 @@ class Config:
             system_config = SystemConfig(key=constants.CONFIG_INIT_KEY, value=True)
             db_session.add(system_config)
 
-            for key, from_env in self._CONFIG_KEYS.items():
-                if not from_env:
-                    system_config = SystemConfig(key=key, value=self._CONFIG_DEFAULTS[key])
+            for key, settings in self._CONFIG_KEYS.items():
+                if not settings[0]:
+                    system_config = SystemConfig(key=key, value=self._CONFIG_KEYS[key][3])
                     db_session.add(system_config)
 
         await db_session.commit()
@@ -110,11 +90,13 @@ class Config:
     async def _load_configs(self):
         db_session = session_maker()
 
-        for key, from_env in self._CONFIG_KEYS.items():
-            if from_env:  # 优先从 ENV 中取, 之后取默认值
+        for key, settings in self._CONFIG_KEYS.items():
+            if settings[0]:  # 优先从 ENV 中取, 之后取默认值
                 value = os.getenv(key)
                 if value is None:
-                    value = self._CONFIG_DEFAULTS[key]
+                    value = self._CONFIG_KEYS[key][3]
+                else:
+                    value = json.loads(value)
                 _CONFIG_CACHE[key] = value
             else:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)
@@ -126,12 +108,12 @@ class Config:
         await engine.dispose()
 
     def __init__(self):
-        asyncio.run(self._init_configs())
+        asyncio.run(self._init_config_table())
         asyncio.run(self._load_configs())
         asyncio.run(self._init_admin())
 
     def __setattr__(self, key, value):
-        if key in self._CONFIG_KEYS and key not in self._CONFIG_NOT_MUTABLE:
+        if key in self._CONFIG_KEYS and self._CONFIG_KEYS[key][2]:
             _CONFIG_CACHE[key] = value
 
             async def _update_database():
@@ -153,3 +135,19 @@ class Config:
             return _CONFIG_CACHE[key]
         else:
             raise Exception(f'Config key {key} not existed')
+
+    def get_public_config(self):
+        configs = {}
+        for key, settings in self._CONFIG_KEYS.items():
+            if settings[1]:
+                configs[key] = _CONFIG_CACHE[key]
+        return configs
+
+    def get_config_privileges(self, key):
+        if key in self._CONFIG_KEYS:
+            return self._CONFIG_KEYS[key][1:3]
+        else:
+            return False, False
+
+    def get_config_type(self, key):
+        return type(self._CONFIG_KEYS[key][3])

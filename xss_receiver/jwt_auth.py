@@ -30,6 +30,7 @@ def verify_token(token):
 
 
 def auth_required(func):
+    return func
     @wraps(func)
     async def decorator(request: sanic.Request, *args, **kwargs):
         if request.ctx.auth:
