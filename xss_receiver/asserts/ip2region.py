@@ -5,7 +5,10 @@
 " Author: koma<komazhang@foxmail.com>
 " Date : 2015-11-06
 """
-import struct, io, socket, sys
+import io
+import socket
+import struct
+import sys
 
 
 class Ip2Region(object):

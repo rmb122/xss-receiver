@@ -1,8 +1,8 @@
 import asyncio
+import json
 import multiprocessing
 import os
 import typing
-import json
 
 import sqlalchemy
 from sqlalchemy import func
@@ -126,6 +126,7 @@ class Config:
 
                 await db_session.commit()
                 await db_session.close()
+
             asyncio.create_task(_update_database())
         else:
             raise Exception(f'Config key {key} not existed or not mutable')

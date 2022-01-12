@@ -1,10 +1,15 @@
+import hashlib
+import os.path
 import random
+import json
 import typing
 from functools import wraps
-import aiofiles
-import hashlib
 
+import aiofiles
+import jinja2.sandbox
 import sanic
+from werkzeug.utils import secure_filename
+from xss_receiver import models
 
 
 def random_string(len):
@@ -100,3 +105,61 @@ def fix_upper_case(header_dict: typing.Dict):
         key = '-'.join([i.capitalize() for i in key])
         output_dict[key] = value
     return output_dict
+
+
+async def render_dynamic_template(template: str, _globals: typing.Dict[str, typing.Any]):
+    env = jinja2.sandbox.SandboxedEnvironment(extensions=['jinja2.ext.do'], enable_async=True)
+    result = ""
+    error = None
+
+    try:
+        result = await env.from_string(template).render_async(_globals)
+    except Exception as e:
+        error = e
+
+    return result, error
+
+
+def generate_dynamic_template_globals(system_config, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body):
+    _globals = {}
+
+    def add_header(name, value):
+        if isinstance(name, str) and isinstance(value, str):
+            response.headers.add(name, value)
+
+    def pop_header(name):
+        if isinstance(name, str):
+            response.headers.pop(name)
+
+    def set_status(code):
+        if isinstance(code, int):
+            response.status = code
+
+    async def get_upload_file(filename):
+        if isinstance(filename, str):
+            filename = secure_filename(filename)
+            return await read_file(os.path.join(system_config.UPLOAD_PATH, filename))
+        else:
+            return None
+
+    _globals['add_header'] = add_header
+    _globals['pop_header'] = pop_header
+    _globals['set_status'] = set_status
+    _globals['get_upload_file'] = get_upload_file
+    _globals['json_encode'] = json.dumps
+    _globals['json_decode'] = json.loads
+
+    _globals['client_ip'] = client_ip
+    _globals['path'] = path
+    _globals['method'] = method
+    _globals['header'] = header
+    _globals['arg'] = arg
+    _globals['body'] = body
+
+    return _globals
+
+
+async def add_system_log(db_session, content, log_type):
+    system_log = models.SystemLog(log_content=content, log_type=log_type)
+    db_session.add(system_log)
+    await db_session.commit()

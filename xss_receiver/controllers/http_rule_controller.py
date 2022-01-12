@@ -2,6 +2,7 @@ import sanic
 from sanic import Blueprint, json
 from sqlalchemy.future import select
 
+from xss_receiver import constants
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.models import HttpRule
 from xss_receiver.response import Response
@@ -14,17 +15,18 @@ rule_controller = Blueprint('rule_controller', __name__)
 async def add(request: sanic.Request):
     if isinstance(request.json, dict):
         path = request.json.get('path', None)
+        rule_type = request.json.get('rule_type', None)
         filename = request.json.get('filename', None)
         write_log = request.json.get('write_log', None)
         send_mail = request.json.get('send_mail', None)
         comment = request.json.get('comment', None)
 
         if isinstance(path, str) and isinstance(filename, str) and isinstance(write_log, bool) \
-                and isinstance(send_mail, bool) and isinstance(comment, str):
+                and isinstance(send_mail, bool) and isinstance(comment, str) and rule_type in constants.RULE_TYPES:
             query = select(HttpRule).where(HttpRule.path == path)
             rule = (await request.ctx.db_session.execute(query)).scalar()
             if rule is None:
-                rule = HttpRule(path=path, filename=filename, write_log=write_log, send_mail=send_mail, comment=comment)
+                rule = HttpRule(path=path, rule_type=rule_type, filename=filename, write_log=write_log, send_mail=send_mail, comment=comment)
                 request.ctx.db_session.add(rule)
                 await request.ctx.db_session.commit()
                 return json(Response.success('添加成功'))
@@ -41,6 +43,7 @@ async def add(request: sanic.Request):
 async def modify(request: sanic.Request):
     if isinstance(request.json, dict):
         rule_id = request.json.get('rule_id', None)
+        rule_type = request.json.get('rule_type', None)
         path = request.json.get('path', None)
         filename = request.json.get('filename', None)
         write_log = request.json.get('write_log', None)
@@ -67,6 +70,8 @@ async def modify(request: sanic.Request):
                     rule.send_mail = send_mail
                 if isinstance(comment, str):
                     rule.comment = comment
+                if rule_type in constants.RULE_TYPES:
+                    rule.rule_type = rule_type
 
                 request.ctx.db_session.add(rule)
                 await request.ctx.db_session.commit()

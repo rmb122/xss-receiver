@@ -36,6 +36,7 @@ def auth_required(func):
             return await func(request, *args, **kwargs)
         else:
             return sanic.response.json(Response().failed('Login required'), 403)
+
     return decorator
 
 

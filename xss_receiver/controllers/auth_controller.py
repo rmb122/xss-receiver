@@ -1,3 +1,4 @@
+import asyncio
 import typing
 from secrets import compare_digest
 
@@ -9,7 +10,7 @@ from xss_receiver import system_config, constants, ip2region
 from xss_receiver.jwt_auth import sign_token, auth_required, admin_required
 from xss_receiver.models import SystemLog, User
 from xss_receiver.response import Response
-from xss_receiver.utils import passwd_hash, get_region_from_ip
+from xss_receiver.utils import passwd_hash, get_region_from_ip, add_system_log
 
 auth_controller = Blueprint('auth_controller', __name__)
 
@@ -31,10 +32,11 @@ async def login(request: sanic.Request):
         if isinstance(username, str) and isinstance(password, str) and \
                 (user is not None) and compare_digest(passwd_hash(password, system_config.PASSWORD_SALT), user.password):
             token = sign_token(user.user_id)
-            system_log = SystemLog(log_content=f'Login with username [{username}] in [{request.ip} | {get_region_from_ip(request.ip, ip2region)}]', log_type=constants.LOG_TYPE_LOGIN)
-            request.ctx.db_session.add(system_log)
-            await request.ctx.db_session.commit()
-            return json(Response.success('登录成功', token))
+
+            log_content = f'Login with username [{username}] in [{request.ip} | {get_region_from_ip(request.ip, ip2region)}]'
+            await add_system_log(request.ctx.db_session, log_content, constants.LOG_TYPE_LOGIN)
+
+            return json(Response.success('登录成功', {'token': token, 'user_type': user.user_type}))
         else:
             return json(Response.failed('用户名或密码错误'))
     else:
@@ -64,7 +66,7 @@ async def register(request: sanic.Request):
 @admin_required
 async def list_user(request: sanic.Request):
     users = (await request.ctx.db_session.execute(select(User.username, User.user_type))).fetchall()
-    users = [{user: user_type} for user, user_type in users]
+    users = [{'username': user, 'user_type': user_type} for user, user_type in users]
     return json(Response.success('', users))
 
 
@@ -103,7 +105,7 @@ async def change_password(request: sanic.Request):
         return json(Response.success('修改成功'))
     elif target_user is not None and request.ctx.user.user_type == constants.USER_TYPE_SUPER_ADMIN \
             and isinstance(new_password, str) and isinstance(target_user, str):
-        # 超级用户修改普通用户不需要密码
+        # 超级用户修改普通用户不需要原密码
         user = (await request.ctx.db_session.execute(select(User).where(User.username == target_user))).scalar()
         if user is not None and user.user_type == constants.USER_TYPE_NORMAL:
             user.password = passwd_hash(new_password, system_config.PASSWORD_SALT)

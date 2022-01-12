@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 import datetime
 import typing
 from dataclasses import dataclass
+
 from sqlalchemy import Column, Text, String, Integer, Boolean, DateTime, VARCHAR, JSON, SmallInteger, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
 
 @dataclass
 class HttpRuleCatalog(Base):
@@ -19,6 +22,7 @@ class HttpRuleCatalog(Base):
 class HttpRule(Base):
     __tablename__ = 'http_rule'
     rule_id: int = Column(Integer(), primary_key=True, autoincrement=True)
+    rule_type: int = Column(Integer())
     path: str = Column(String(255), unique=True)
     filename: str = Column(Text())
     write_log: bool = Column(Boolean())

@@ -1,14 +1,14 @@
 from os import listdir, unlink
 from os.path import join, exists, getsize
 
-from sanic import Blueprint, json
 import sanic
-from xss_receiver.utils import read_file
+from sanic import Blueprint, json
 from werkzeug.utils import secure_filename
-from xss_receiver import system_config
 
+from xss_receiver import system_config
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.response import Response
+from xss_receiver.utils import read_file
 
 temp_file_controller = Blueprint('temp_file_controller', __name__)
 

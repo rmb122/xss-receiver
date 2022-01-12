@@ -1,12 +1,13 @@
+from math import ceil
+
 import sanic
 from sanic import Blueprint, json
+from sqlalchemy import func
+from sqlalchemy.future import select
 
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.models import SystemLog
-from sqlalchemy.future import select
-from sqlalchemy import func
 from xss_receiver.response import Response, PagedResponse
-from math import ceil
 
 system_log_controller = Blueprint('system_log_controller', __name__)
 
