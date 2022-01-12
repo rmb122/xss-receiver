@@ -4,6 +4,7 @@ import random
 import json
 import typing
 from functools import wraps
+import urllib.parse
 
 import aiofiles
 import jinja2.sandbox
@@ -142,12 +143,24 @@ def generate_dynamic_template_globals(system_config, response: sanic.HTTPRespons
         else:
             return None
 
+    def catch_exception(func):
+        def new_func(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception:
+                return None
+        return new_func
+
     _globals['add_header'] = add_header
     _globals['pop_header'] = pop_header
     _globals['set_status'] = set_status
     _globals['get_upload_file'] = get_upload_file
-    _globals['json_encode'] = json.dumps
-    _globals['json_decode'] = json.loads
+
+    _globals['json_encode'] = catch_exception(json.dumps)
+    _globals['json_decode'] = catch_exception(json.loads)
+    _globals['url_encode'] = catch_exception(urllib.parse.quote)
+    _globals['url_decode'] = catch_exception(urllib.parse.unquote)
+    _globals['url_parse_qs'] = catch_exception(urllib.parse.parse_qs)
 
     _globals['client_ip'] = client_ip
     _globals['path'] = path
