@@ -6,7 +6,15 @@ from dataclasses import dataclass
 from sqlalchemy import Column, Text, String, Integer, Boolean, DateTime, VARCHAR, JSON, SmallInteger, ForeignKey
 from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+
+class CharSetBase(object):
+    __table_args__ = {
+        "mysql_default_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_general_ci",
+    }
+
+
+Base = declarative_base(cls=CharSetBase)
 
 
 @dataclass
