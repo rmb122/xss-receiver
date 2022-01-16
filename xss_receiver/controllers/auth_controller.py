@@ -32,7 +32,12 @@ async def login(request: sanic.Request):
                 (user is not None) and compare_digest(passwd_hash(password, system_config.PASSWORD_SALT), user.password):
             token = sign_token(user.user_id)
 
-            log_content = f'Login with username [{username}] in [{request.ip} | {get_region_from_ip(request.ip, ip2region)}]'
+            if system_config.BEHIND_PROXY:
+                client_ip = request.headers.get(constants.REAL_IP_HEADER)
+            else:
+                client_ip = request.ip
+
+            log_content = f'Login with username [{username}] in [{client_ip} | {get_region_from_ip(client_ip, ip2region)}]'
             await add_system_log(request.ctx.db_session, log_content, constants.LOG_TYPE_LOGIN)
 
             return json(Response.success('登录成功', {'token': token, 'user_type': user.user_type}))
