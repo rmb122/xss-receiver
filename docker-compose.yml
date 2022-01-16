@@ -20,8 +20,8 @@ services:
             - DATABASE_DSN=mysql+aiomysql://root:app@mysql:3306/app
             - UPLOAD_PATH=/app/uploads
             - TEMP_FILE_PATH=/app/temp_uploads
-            - URL_PREFIX=/rmb122        # admin panel's URL prefix, use http://example.com/admin/index.html to access it
-            - INIT_USER=rmb122:rmb122  # user created after first start
+            - URL_PREFIX=/admin        # admin panel's URL prefix, use http://example.com/admin/index.html to access it
+            - INIT_USER=admin:admin  # user created after first start
         ports:
             - "80:8080" # or if you want to reverse proxy, change BEHIND_PROXY=False to BEHIND_PROXY=True, and using X-Real-IP to trasnfer IP
-            # - "127.0.0.1:8080:80"
+            # - "127.0.0.1:8080:8080"

@@ -157,6 +157,11 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
             if len(directory_name) > 0:
                 shutil.rmtree(os.path.join(system_config.UPLOAD_PATH, directory_name))
 
+    async def delete_upload_file(filename):
+        if isinstance(filename, str):
+            filename = secure_filename_with_directory(filename)
+            os.unlink(filename)
+
     async def read_upload_file(filename, binary=False):
         if isinstance(filename, str) and isinstance(binary, bool):
             filename = secure_filename_with_directory(filename)
@@ -201,6 +206,7 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
     _globals['set_status'] = catch_exception(set_status)
     _globals['create_directory'] = catch_exception(create_directory)
     _globals['delete_directory'] = catch_exception(delete_directory)
+    _globals['delete_upload_file'] = catch_exception(delete_upload_file)
     _globals['read_upload_file'] = catch_exception(read_upload_file)
     _globals['write_upload_file'] = catch_exception(write_upload_file)
     _globals['get_request_upload_file'] = catch_exception(get_request_upload_file)
