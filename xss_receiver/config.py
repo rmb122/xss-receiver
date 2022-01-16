@@ -1,5 +1,4 @@
 import asyncio
-import json
 import multiprocessing
 import os
 import typing
@@ -20,8 +19,10 @@ _CONFIG_CACHE = _manager.dict()
 class Config:
     # name: [from_env, public, mutable, default_value, comment]
     _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any, str]] = {
+        'INIT_USER': [True, False, False, 'admin:admin'],
+        'FRONTEND_DIR': [True, False, False, '/dev/shm', ''],
         'SECRET_KEY': [True, False, False, os.urandom(32), ''],
-        'URL_PREFIX': [True, False, False, '', ''],
+        'URL_PREFIX': [True, False, False, '/admin', ''],
         'BEHIND_PROXY': [True, False, False, False, ''],
         'UPLOAD_PATH': [True, False, False, '/dev/shm', ''],
         'TEMP_FILE_PATH': [True, False, False, '/dev/shm', ''],
@@ -38,6 +39,7 @@ class Config:
         'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576, '最大临时文件上传大小']
     }
 
+    FRONTEND_DIR: str
     PASSWORD_SALT: str
     SECRET_KEY: str
     URL_PREFIX: str
@@ -80,7 +82,8 @@ class Config:
         count = (await db_session.execute(select(func.count('1')).select_from(User))).scalar()
 
         if count == 0:
-            user = User(username='admin', password=passwd_hash(passwd_hash('admin', 'admin'), self.PASSWORD_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
+            init_username, init_password = self.INIT_USER.split(':', 2)
+            user = User(username=init_username, password=passwd_hash(passwd_hash(init_password, init_username), self.PASSWORD_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
             db_session.add(user)
             await db_session.commit()
 
@@ -96,7 +99,12 @@ class Config:
                 if value is None:
                     value = self._CONFIG_KEYS[key][3]
                 else:
-                    value = json.loads(value)
+                    config_type = self.get_config_type(key)
+                    if config_type == bool:
+                        if value.lower() == 'true':
+                            value = True
+                        else:
+                            value = False
                 _CONFIG_CACHE[key] = value
             else:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)

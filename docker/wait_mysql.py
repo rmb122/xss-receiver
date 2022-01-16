@@ -1,6 +1,7 @@
 import socket
 import time
 
+
 def wait_for_mysql(host):
     success = False
     while not success:

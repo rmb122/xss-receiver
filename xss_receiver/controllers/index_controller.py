@@ -6,7 +6,6 @@ from os.path import exists, join
 import sanic
 import sqlalchemy
 from sqlalchemy.future import select
-from werkzeug.utils import secure_filename
 
 from xss_receiver import constants
 from xss_receiver import system_config
@@ -79,7 +78,8 @@ async def mapping(request: sanic.Request, path=''):
     if rule.send_mail:
         asyncio.create_task(send_mail(path, f"Client IP: {client_ip}\n\n"
                                             f"Header: {dumps(dict(request.headers), indent=4)}\n\n"
-                                            f"Args: {dumps(dict(request.args), indent=4)}"))
+                                            f"Args: {dumps(dict(request.args), indent=4)}\n\n"
+                                            f"Body: {raw_body_str}"))
 
     filename = secure_filename_with_directory(rule.filename)
     filepath = join(system_config.UPLOAD_PATH, filename)

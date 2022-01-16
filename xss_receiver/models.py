@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import datetime
-import typing
 from dataclasses import dataclass
 
 from sqlalchemy import Column, Text, String, Integer, Boolean, DateTime, VARCHAR, JSON, SmallInteger, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 

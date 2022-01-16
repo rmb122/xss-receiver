@@ -1,7 +1,7 @@
 import asyncio
-from os import scandir, unlink, rename, mkdir
-from os.path import join, exists, getsize, getmtime, isdir, isfile
 import shutil
+from os import scandir, unlink, rename, mkdir
+from os.path import join, exists, getsize, isdir, isfile
 
 import sanic
 from sanic import Blueprint, json
