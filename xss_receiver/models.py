@@ -15,7 +15,7 @@ class HttpRuleCatalog(Base):
     __tablename__ = 'http_rule_catalog'
     catalog_id: int = Column(Integer(), primary_key=True, autoincrement=True)
     catalog_name: str = Column(String(255), unique=True)
-    rules: typing.List[HttpRule] = relationship("HttpRule")
+    # rules: typing.List[HttpRule] = relationship("HttpRule")
 
 
 @dataclass
@@ -28,10 +28,10 @@ class HttpRule(Base):
     write_log: bool = Column(Boolean())
     send_mail: bool = Column(Boolean())
     comment: str = Column(Text())
-    create_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
+    # create_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
 
-    catalog_id: str = Column(ForeignKey("http_rule_catalog.catalog_id"))
-    catalog: HttpRuleCatalog = relationship("HttpRuleCatalog", back_populates="rules")
+    catalog_id: int = Column(ForeignKey("http_rule_catalog.catalog_id"))
+    # catalog: HttpRuleCatalog = relationship("HttpRuleCatalog", back_populates="rules")
 
 
 @dataclass

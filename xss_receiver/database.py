@@ -1,13 +1,14 @@
 import asyncio
 
 import sanic
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from xss_receiver import models
 
-engine = create_async_engine("mysql+aiomysql://root:root@172.17.0.2/xss")
+engine = create_async_engine(os.getenv("DATABASE_DSN"))
 session_maker = sessionmaker(engine, AsyncSession, expire_on_commit=False)
 
 

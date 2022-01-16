@@ -1,4 +1,3 @@
-import asyncio
 import typing
 from secrets import compare_digest
 
@@ -8,7 +7,7 @@ from sqlalchemy.future import select
 
 from xss_receiver import system_config, constants, ip2region
 from xss_receiver.jwt_auth import sign_token, auth_required, admin_required
-from xss_receiver.models import SystemLog, User
+from xss_receiver.models import User
 from xss_receiver.response import Response
 from xss_receiver.utils import passwd_hash, get_region_from_ip, add_system_log
 
@@ -51,7 +50,7 @@ async def register(request: sanic.Request):
 
     user = (await request.ctx.db_session.execute(select(User).where(User.username == username))).scalar()
     if user is None:
-        if isinstance(username, str) and isinstance(password, str):
+        if isinstance(username, str) and isinstance(password, str) and len(username) < 255:
             user = User(username=username, password=passwd_hash(password, system_config.PASSWORD_SALT), user_type=constants.USER_TYPE_NORMAL)
             request.ctx.db_session.add(user)
             await request.ctx.db_session.commit()

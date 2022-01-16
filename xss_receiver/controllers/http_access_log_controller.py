@@ -12,10 +12,10 @@ from xss_receiver.models import HttpAccessLog
 from xss_receiver.response import Response, PagedResponse
 from xss_receiver.utils import get_region_from_ip
 
-access_log_controller = Blueprint('access_log_controller', __name__)
+http_access_log_controller = Blueprint('http_access_log_controller', __name__)
 
 
-@access_log_controller.route('/list', methods=['POST'])
+@http_access_log_controller.route('/list', methods=['POST'])
 @auth_required
 async def access_log_list(request: sanic.Request):
     if isinstance(request.json, dict):
@@ -62,7 +62,7 @@ async def access_log_list(request: sanic.Request):
         return json(Response.invalid('无效请求'))
 
 
-@access_log_controller.route('/get_last_id', methods=['GET'])
+@http_access_log_controller.route('/get_last_id', methods=['GET'])
 @auth_required
 async def get_last_id(request: sanic.Request):
     query = select(HttpAccessLog).order_by(HttpAccessLog.log_id.desc())
@@ -73,7 +73,7 @@ async def get_last_id(request: sanic.Request):
         return json(Response.success('', 0))
 
 
-@access_log_controller.route('/delete_all', methods=['POST'])
+@http_access_log_controller.route('/delete_all', methods=['POST'])
 @auth_required
 async def delete_all(request: sanic.Request):
     if isinstance(request.json, dict):

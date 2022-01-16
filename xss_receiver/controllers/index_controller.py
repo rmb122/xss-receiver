@@ -13,7 +13,7 @@ from xss_receiver import system_config
 from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
-from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, generate_dynamic_template_globals, add_system_log
+from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, generate_dynamic_template_globals, add_system_log, secure_filename_with_directory
 
 index_controller = sanic.Blueprint('index_controller', __name__)
 
@@ -46,16 +46,16 @@ async def mapping(request: sanic.Request, path=''):
         body_type = constants.BODY_TYPE_NORMAL
         body = dumps(filter_list(dict(request.form)))
 
-        if system_config.TEMP_FILE_SAVE:
-            for file_key in request.files:
-                file[file_key] = []
-                for upload_file in request.files[file_key]:
-                    if system_config.TEMP_FILE_SAVE:
-                        save_name = random_string(32)
-                        asyncio.create_task(write_file(join(system_config.TEMP_FILE_PATH, save_name), upload_file.body))
-                    else:
-                        save_name = None
-                    file[file_key].append({'filename': upload_file.name, 'save_name': save_name})
+        for file_key in request.files:
+            # 只保存同名的第一个文件
+            if len(request.files[file_key]) > 0:
+                upload_file = request.files[file_key][0]
+                if system_config.TEMP_FILE_SAVE:
+                    save_name = random_string(32)
+                    asyncio.create_task(write_file(join(system_config.TEMP_FILE_PATH, save_name), upload_file.body))
+                else:
+                    save_name = None
+                file[file_key] = {'filename': upload_file.name, 'save_name': save_name}
     else:
         body = request.body
         try:
@@ -81,12 +81,12 @@ async def mapping(request: sanic.Request, path=''):
                                             f"Header: {dumps(dict(request.headers), indent=4)}\n\n"
                                             f"Args: {dumps(dict(request.args), indent=4)}"))
 
-    filename = secure_filename(rule.filename)
+    filename = secure_filename_with_directory(rule.filename)
     filepath = join(system_config.UPLOAD_PATH, filename)
     if exists(filepath):
         if rule.rule_type == constants.RULE_TYPE_DYNAMIC_TEMPLATE:
             response = sanic.HTTPResponse('', 200, {}, 'text/html; charset=utf-8')
-            _globals = generate_dynamic_template_globals(system_config, response, client_ip, path, method, header, arg, raw_body_str)
+            _globals = generate_dynamic_template_globals(system_config, request, response, client_ip, path, method, header, arg, raw_body_str, file)
             template_result, error = await render_dynamic_template((await read_file(filepath)).decode(), _globals)
             response.body = template_result.encode()
 

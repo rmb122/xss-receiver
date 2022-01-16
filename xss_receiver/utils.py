@@ -1,15 +1,18 @@
 import hashlib
-import os.path
-import random
 import json
+import os.path
+import os
+import shutil
+import random
 import typing
-from functools import wraps
 import urllib.parse
+from functools import wraps
 
 import aiofiles
 import jinja2.sandbox
 import sanic
 from werkzeug.utils import secure_filename
+
 from xss_receiver import models
 
 
@@ -81,13 +84,13 @@ def process_headers(func):
     return _process_headers
 
 
-async def write_file(path, body):
-    async with aiofiles.open(path, 'wb') as f:
+async def write_file(path, body, mode='wb'):
+    async with aiofiles.open(path, mode) as f:
         await f.write(body)
 
 
-async def read_file(path):
-    async with aiofiles.open(path, 'rb') as f:
+async def read_file(path, mode='rb'):
+    async with aiofiles.open(path, mode) as f:
         return await f.read()
 
 
@@ -121,7 +124,13 @@ async def render_dynamic_template(template: str, _globals: typing.Dict[str, typi
     return result, error
 
 
-def generate_dynamic_template_globals(system_config, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body):
+def secure_filename_with_directory(filename: str):
+    parts = filename.split(os.sep)
+    full_path = os.path.join(*[secure_filename(i) for i in parts])
+    return full_path.strip(os.sep)  # 应该是不需要的, 以防万一
+
+
+def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body, file):
     _globals = {}
 
     def add_header(name, value):
@@ -136,12 +145,47 @@ def generate_dynamic_template_globals(system_config, response: sanic.HTTPRespons
         if isinstance(code, int):
             response.status = code
 
-    async def get_upload_file(filename):
-        if isinstance(filename, str):
-            filename = secure_filename(filename)
-            return await read_file(os.path.join(system_config.UPLOAD_PATH, filename))
-        else:
-            return None
+    async def create_directory(directory_name):
+        if isinstance(directory_name, str):
+            directory_name = secure_filename(directory_name)
+            if len(directory_name) > 0:
+                os.mkdir(os.path.join(system_config.UPLOAD_PATH, directory_name))
+
+    async def delete_directory(directory_name):
+        if isinstance(directory_name, str):
+            directory_name = secure_filename(directory_name)
+            if len(directory_name) > 0:
+                shutil.rmtree(os.path.join(system_config.UPLOAD_PATH, directory_name))
+
+    async def read_upload_file(filename, binary=False):
+        if isinstance(filename, str) and isinstance(binary, bool):
+            filename = secure_filename_with_directory(filename)
+
+            if binary:
+                read_mode = 'rb'
+            else:
+                read_mode = 'r'
+
+            return await read_file(os.path.join(system_config.UPLOAD_PATH, filename), read_mode)
+
+    async def write_upload_file(filename, content, append=False):
+        if isinstance(filename, str) and isinstance(append, bool) and (isinstance(content, str) or isinstance(content, bytes)):
+            filename = secure_filename_with_directory(filename)
+
+            if append:
+                write_mode = 'a'
+            else:
+                write_mode = 'w'
+
+            if isinstance(content, bytes):
+                write_mode += 'b'
+
+            return await write_file(os.path.join(system_config.UPLOAD_PATH, filename), content, write_mode)
+
+    async def get_request_upload_file(file_key):
+        if isinstance(file_key, str) and file_key in request.files:
+            f = request.files.get(file_key)
+            return f.name, f.body
 
     def catch_exception(func):
         def new_func(*args, **kwargs):
@@ -149,12 +193,17 @@ def generate_dynamic_template_globals(system_config, response: sanic.HTTPRespons
                 return func(*args, **kwargs)
             except Exception:
                 return None
+
         return new_func
 
-    _globals['add_header'] = add_header
-    _globals['pop_header'] = pop_header
-    _globals['set_status'] = set_status
-    _globals['get_upload_file'] = get_upload_file
+    _globals['add_header'] = catch_exception(add_header)
+    _globals['pop_header'] = catch_exception(pop_header)
+    _globals['set_status'] = catch_exception(set_status)
+    _globals['create_directory'] = catch_exception(create_directory)
+    _globals['delete_directory'] = catch_exception(delete_directory)
+    _globals['read_upload_file'] = catch_exception(read_upload_file)
+    _globals['write_upload_file'] = catch_exception(write_upload_file)
+    _globals['get_request_upload_file'] = catch_exception(get_request_upload_file)
 
     _globals['json_encode'] = catch_exception(json.dumps)
     _globals['json_decode'] = catch_exception(json.loads)
@@ -168,6 +217,7 @@ def generate_dynamic_template_globals(system_config, response: sanic.HTTPRespons
     _globals['header'] = header
     _globals['arg'] = arg
     _globals['body'] = body
+    _globals['file'] = file
 
     return _globals
 

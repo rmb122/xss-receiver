@@ -1,5 +1,5 @@
 from os import listdir, unlink
-from os.path import join, exists, getsize
+from os.path import join, exists, getsize, isdir
 
 import sanic
 from sanic import Blueprint, json
@@ -39,7 +39,7 @@ async def download(request: sanic.Request):
         if isinstance(filename, str):
             filename = secure_filename(filename)
             path = join(system_config.TEMP_FILE_PATH, filename)
-            if exists(path):
+            if exists(path) and not isdir(path):
                 return await sanic.response.file(path, filename=filename)
             else:
                 return json(Response.failed('文件不存在'), 500)
@@ -57,7 +57,7 @@ async def preview(request: sanic.Request):
         if isinstance(filename, str):
             filename = secure_filename(filename)
             path = join(system_config.TEMP_FILE_PATH, filename)
-            if exists(path):
+            if exists(path) and not isdir(path):
                 if getsize(path) < system_config.MAX_PREVIEW_SIZE:
                     content = await read_file(path)
                     try:
@@ -68,7 +68,7 @@ async def preview(request: sanic.Request):
                 else:
                     json(Response.failed('文件过大, 无法预览'))
             else:
-                return json(Response.failed('文件不存在'))
+                return json(Response.failed('文件不存在或者为文件夹'))
         else:
             return json(Response.invalid('参数无效'))
     else:

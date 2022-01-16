@@ -14,9 +14,9 @@ services:
         restart: always
         depends_on:
             - mysql
-        environment: 
+        environment:
             - BEHIND_PROXY=False
-            - SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:app@mysql:3306/app
+            - DATABASE_DSN=mysql+aiomysql://root:app@mysql:3306/app
             - UPLOAD_PATH=/app/uploads
             - TEMP_FILE_PATH=/app/temp_uploads
             - URL_PREFIX=/super_secret_url # admin panel's URL prefix, use http://example.com/super_secret_url/index.html to access it

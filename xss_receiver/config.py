@@ -23,8 +23,8 @@ class Config:
         'SECRET_KEY': [True, False, False, os.urandom(32), ''],
         'URL_PREFIX': [True, False, False, '', ''],
         'BEHIND_PROXY': [True, False, False, False, ''],
-        'UPLOAD_PATH': [True, False, False, '/tmp', ''],
-        'TEMP_FILE_PATH': [True, False, False, '/tmp', ''],
+        'UPLOAD_PATH': [True, False, False, '/dev/shm', ''],
+        'TEMP_FILE_PATH': [True, False, False, '/dev/shm', ''],
 
         'PASSWORD_SALT': [False, False, False, os.urandom(32).hex(), ''],
         'TEMP_FILE_SAVE': [False, True, True, False, '是否保存临时文件'],

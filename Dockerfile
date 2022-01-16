@@ -1,4 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.7
+FROM python:lastest
 
 COPY . /app
 COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
