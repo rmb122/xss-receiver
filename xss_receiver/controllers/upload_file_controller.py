@@ -129,6 +129,8 @@ async def modify(request: sanic.Request):
             filename = secure_filename_with_directory(filename)
             path = join(system_config.UPLOAD_PATH, filename)
             if exists(path) and not isdir(path):
+                response = Response.success('修改成功')
+
                 if isinstance(content, str):
                     await write_file(path, content.encode())
 
@@ -138,11 +140,12 @@ async def modify(request: sanic.Request):
                     if not exists(new_path):
                         try:
                             rename(path, new_path)
-                            return json(Response.success('修改成功'))
                         except FileNotFoundError:
-                            return json(Response.failed('重命名失败, 请确认新文件所在文件夹存在'))
+                            response = Response.failed('重命名失败, 请确认新文件所在文件夹存在')
                     else:
-                        return json(Response.failed('重命名失败, 目标文件名已存在'))
+                        response = Response.failed('重命名失败, 目标文件名已存在')
+
+                return json(response)
             else:
                 return json(Response.failed('文件不存在'))
         else:

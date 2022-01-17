@@ -1,7 +1,10 @@
 import sanic
+import sanic.exceptions
 
-from xss_receiver import app
+from xss_receiver import app, constants
 from xss_receiver import system_config
+from xss_receiver.database import session_maker
+from xss_receiver.utils import add_system_log
 from .auth_controller import auth_controller
 from .config_controller import config_controller
 from .http_access_log_controller import http_access_log_controller
@@ -25,8 +28,15 @@ app.blueprint(index_controller, url_prefix='/')
 app.static(system_config.URL_PREFIX, system_config.FRONTEND_DIR)
 
 
-async def server_error_handler(request, exception):
-    return sanic.response.text("Oops :(", status=500)
+async def server_error_handler(request: sanic.Request, exception):
+    if isinstance(exception, sanic.exceptions.FileNotFound):
+        return sanic.response.text("", status=404)
+    else:
+        db_session = session_maker()
+        await add_system_log(db_session, f"System error [{str(exception)}] in [{request.path}]", constants.LOG_TYPE_MAIL_SEND_ERROR)
+        await db_session.close()
+
+        return sanic.response.text("", status=500)
 
 
 app.error_handler.add(Exception, server_error_handler)

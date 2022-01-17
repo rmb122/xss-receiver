@@ -6,7 +6,6 @@ from sanic.response import json
 from sqlalchemy import func, delete
 from sqlalchemy.future import select
 
-from xss_receiver import ip2region
 from xss_receiver.jwt_auth import auth_required
 from xss_receiver.models import HttpAccessLog
 from xss_receiver.response import Response, PagedResponse
@@ -50,7 +49,7 @@ async def access_log_list(request: sanic.Request):
             access_logs = []
             for i in access_log_scalars:
                 # 也可以在入库的时候计算地区, 在这里输出时计算是因为感觉存储大量地址挺浪费空间的 233, 而计算不用太耗时间
-                i.region = get_region_from_ip(i.client_ip, ip2region)
+                i.region = get_region_from_ip(i.client_ip)
                 i.log_time = i.log_time.strftime('%Y-%m-%d %H:%M:%S')
                 access_logs.append(i)
 

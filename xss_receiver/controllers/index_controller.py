@@ -86,9 +86,10 @@ async def mapping(request: sanic.Request, path=''):
     if exists(filepath):
         if rule.rule_type == constants.RULE_TYPE_DYNAMIC_TEMPLATE:
             response = sanic.HTTPResponse('', 200, {}, 'text/html; charset=utf-8')
-            _globals = generate_dynamic_template_globals(system_config, request, response, client_ip, path, method, header, arg, raw_body_str, file)
+            extra_output = []
+            _globals = generate_dynamic_template_globals(system_config, request, response, client_ip, path, method, header, arg, raw_body_str, file, extra_output)
             template_result, error = await render_dynamic_template((await read_file(filepath)).decode(), _globals)
-            response.body = template_result.encode()
+            response.body = template_result.encode() + b''.join(extra_output)
 
             if error is not None:
                 log_content = f'Template render error [{error}] in [{path}]'

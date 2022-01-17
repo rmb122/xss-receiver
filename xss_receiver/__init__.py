@@ -17,6 +17,4 @@ from xss_receiver.jwt_auth import install_jwt_auth_middleware
 inject_database_session(app)
 install_jwt_auth_middleware(app)
 
-ip2region = Ip2Region(f'{path.dirname(__file__)}/asserts/ip2region.db')
-
 from xss_receiver import controllers

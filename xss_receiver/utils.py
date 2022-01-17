@@ -14,6 +14,8 @@ import sanic
 from werkzeug.utils import secure_filename
 
 from xss_receiver import models
+from xss_receiver.asserts.ip2region import Ip2Region
+from xss_receiver.asserts.ipdbv6 import IPDBv6
 
 
 def random_string(len):
@@ -25,41 +27,34 @@ def passwd_hash(password: str, salt: str):
 
 
 def format_region(region):
+    region = region['region'].decode()
+    region = region.split('|')
+    tmp = []
+    for k in region:
+        if k != '0':
+            tmp.append(k)
+        if k == '内网IP':
+            return '局域网'
+    return ''.join(tmp)
+
+
+_ipv4db = Ip2Region(f'{os.path.dirname(__file__)}/asserts/ip2region.db')
+_ipv6db = IPDBv6(f'{os.path.dirname(__file__)}/asserts/ipv6wry.db')
+
+
+def get_region_from_ip(ip):
+    ip = ip.strip('[]')
+    if ip.startswith('::ffff:'):
+        ip = ip[7:]
+
     try:
-        region = region['region'].decode()
-        region = region.split('|')
-        tmp = []
-        for k in region:
-            if k != '0':
-                tmp.append(k)
-            if k == '内网IP':
-                return '局域网'
-        return ''.join(tmp)
+        if ":" not in ip:
+            region = _ipv4db.btreeSearch(ip)
+            return format_region(region)
+        else:
+            return _ipv6db.getIPAddr(ip, None)[2].replace('\t', '').replace(' ', '')
     except Exception:
-        return '解析错误'
-
-
-def get_region_from_ip(ip, ip2Region):
-    '''
-    TODO: add ipv6 support
-    :param ip:
-    :param ip2Region:
-    :return:
-    '''
-    if ":" not in ip:
-        region = ""
-        retry = 0
-        while not region and retry < 3:
-            try:
-                region = ip2Region.btreeSearch(ip)
-            except Exception:
-                retry += 1
-                pass
-        if region == "":
-            return "转换中出错"
-        return format_region(region)
-    else:
-        return "不支持 IPv6 查询"
+        return '查询中出错'
 
 
 def process_headers(func):
@@ -130,7 +125,7 @@ def secure_filename_with_directory(filename: str):
     return full_path.strip(os.sep)  # 应该是不需要的, 以防万一
 
 
-def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body, file):
+def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body, file, extra_output):
     _globals = {}
 
     def add_header(name, value):
@@ -145,19 +140,33 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
         if isinstance(code, int):
             response.status = code
 
-    async def create_directory(directory_name):
+    def write_output(output):
+        if isinstance(output, bytes):
+            extra_output.append(output)
+        elif isinstance(output, str):
+            extra_output.append(output.encode())
+        elif isinstance(output, list):
+            extra_output.append(bytes(output))
+
+    def list_directory(directory_name):
+        if isinstance(directory_name, str):
+            directory_name = secure_filename(directory_name)
+            entries = os.scandir(os.path.join(system_config.UPLOAD_PATH, directory_name))
+            return [(i.name, i.is_dir()) for i in entries]
+
+    def create_directory(directory_name):
         if isinstance(directory_name, str):
             directory_name = secure_filename(directory_name)
             if len(directory_name) > 0:
                 os.mkdir(os.path.join(system_config.UPLOAD_PATH, directory_name))
 
-    async def delete_directory(directory_name):
+    def delete_directory(directory_name):
         if isinstance(directory_name, str):
             directory_name = secure_filename(directory_name)
             if len(directory_name) > 0:
                 shutil.rmtree(os.path.join(system_config.UPLOAD_PATH, directory_name))
 
-    async def delete_upload_file(filename):
+    def delete_upload_file(filename):
         if isinstance(filename, str):
             filename = secure_filename_with_directory(filename)
             os.unlink(filename)
@@ -187,7 +196,7 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
 
             return await write_file(os.path.join(system_config.UPLOAD_PATH, filename), content, write_mode)
 
-    async def get_request_upload_file(file_key):
+    def get_request_upload_file(file_key):
         if isinstance(file_key, str) and file_key in request.files:
             f = request.files.get(file_key)
             return f.name, f.body
@@ -204,6 +213,9 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
     _globals['add_header'] = catch_exception(add_header)
     _globals['pop_header'] = catch_exception(pop_header)
     _globals['set_status'] = catch_exception(set_status)
+    _globals['write_output'] = catch_exception(write_output)
+
+    _globals['list_directory'] = catch_exception(list_directory)
     _globals['create_directory'] = catch_exception(create_directory)
     _globals['delete_directory'] = catch_exception(delete_directory)
     _globals['delete_upload_file'] = catch_exception(delete_upload_file)
