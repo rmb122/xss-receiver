@@ -8,7 +8,8 @@ import sqlalchemy
 from sqlalchemy.future import select
 
 from xss_receiver import constants
-from xss_receiver import system_config
+from xss_receiver import system_config, publish_subscribe
+from xss_receiver.publish_subscribe import PublishMessage
 from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
@@ -74,6 +75,9 @@ async def mapping(request: sanic.Request, path=''):
 
         request.ctx.db_session.add(access_log)
         await request.ctx.db_session.commit()
+
+        message = PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_HTTP_ACCESS_LOG, msg_content='')
+        asyncio.create_task(publish_subscribe.publish(message))
 
     if rule.send_mail:
         asyncio.create_task(send_mail(path, f"Client IP: {client_ip}\n\n"

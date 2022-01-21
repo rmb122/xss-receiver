@@ -14,6 +14,7 @@ from .index_controller import index_controller
 from .system_log_controller import system_log_controller
 from .temp_file_controller import temp_file_controller
 from .upload_file_controller import upload_file_controller
+from .websocket_controller import websocket_controller
 
 app.blueprint(config_controller, url_prefix=system_config.URL_PREFIX + '/api/config')
 app.blueprint(system_log_controller, url_prefix=system_config.URL_PREFIX + '/api/system_log')
@@ -23,6 +24,7 @@ app.blueprint(http_access_log_controller, url_prefix=system_config.URL_PREFIX + 
 app.blueprint(auth_controller, url_prefix=system_config.URL_PREFIX + '/api/auth')
 app.blueprint(upload_file_controller, url_prefix=system_config.URL_PREFIX + '/api/upload_file')
 app.blueprint(http_rule_catalog_controller, url_prefix=system_config.URL_PREFIX + '/api/http_rule_catalog')
+app.blueprint(websocket_controller, url_prefix=system_config.URL_PREFIX + '/api/websocket')
 app.blueprint(index_controller, url_prefix='/')
 
 app.static(system_config.URL_PREFIX, system_config.FRONTEND_DIR)
@@ -40,3 +42,19 @@ async def server_error_handler(request: sanic.Request, exception):
 
 
 app.error_handler.add(Exception, server_error_handler)
+
+
+'''@app.middleware('response')
+async def cors(request: sanic.Request, response: sanic.HTTPResponse):
+    if request.method == 'OPTIONS':
+        response.status = 200
+
+    response.headers['Server'] = 'nginx'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Headers'] = '*'
+'''

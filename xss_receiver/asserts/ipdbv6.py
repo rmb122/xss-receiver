@@ -110,7 +110,7 @@ class IPDBv6(object):
         m = (l + r) // 2
         o = self.firstIndex + m * (8 + self.offlen)
         new_ip = self.getLong8(o)
- 
+
         if ip < new_ip:
             return self.find(ip, l, m)
         else:
@@ -121,7 +121,7 @@ class IPDBv6(object):
         try:
             # 把IP地址转成数字
             ip6 = int(ipaddr.IPAddress(ip))
-        
+
             ip = (ip6 >> 64) & 0xFFFFFFFFFFFFFFFF
             # 使用 self.find 函数查找ip的索引偏移
             i = self.find(ip, 0, self.indexCount)
