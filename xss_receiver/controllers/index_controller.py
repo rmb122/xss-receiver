@@ -9,10 +9,10 @@ from sqlalchemy.future import select
 
 from xss_receiver import constants
 from xss_receiver import system_config, publish_subscribe
-from xss_receiver.publish_subscribe import PublishMessage
 from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
+from xss_receiver.publish_subscribe import PublishMessage
 from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, generate_dynamic_template_globals, add_system_log, secure_filename_with_directory
 
 index_controller = sanic.Blueprint('index_controller', __name__)
@@ -76,7 +76,7 @@ async def mapping(request: sanic.Request, path=''):
         request.ctx.db_session.add(access_log)
         await request.ctx.db_session.commit()
 
-        message = PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_HTTP_ACCESS_LOG, msg_content='')
+        message = PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_HTTP_ACCESS_LOG, msg_content=path)
         asyncio.create_task(publish_subscribe.publish(message))
 
     if rule.send_mail:

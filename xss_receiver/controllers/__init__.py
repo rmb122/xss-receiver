@@ -42,19 +42,3 @@ async def server_error_handler(request: sanic.Request, exception):
 
 
 app.error_handler.add(Exception, server_error_handler)
-
-
-'''@app.middleware('response')
-async def cors(request: sanic.Request, response: sanic.HTTPResponse):
-    if request.method == 'OPTIONS':
-        response.status = 200
-
-    response.headers['Server'] = 'nginx'
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
-    response.headers['Access-Control-Allow-Headers'] = '*'
-'''

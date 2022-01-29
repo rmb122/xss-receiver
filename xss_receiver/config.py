@@ -105,6 +105,11 @@ class Config:
                             value = True
                         else:
                             value = False
+                    elif config_type == int:
+                        value = int(value)
+                    elif config_type == bytes:
+                        value = value.encode()
+
                 _CONFIG_CACHE[key] = value
             else:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)

@@ -6,10 +6,9 @@ from sanic import Blueprint
 from sanic.server.websockets.impl import WebsocketImplProtocol
 from sqlalchemy.future import select
 
-from xss_receiver import system_config, constants
-from xss_receiver.models import User
 from xss_receiver import publish_subscribe, constants
 from xss_receiver.jwt_auth import verify_token
+from xss_receiver.models import User
 from xss_receiver.publish_subscribe import PublishMessage
 
 websocket_controller = Blueprint('websocket_controller', __name__)
@@ -21,17 +20,17 @@ websocket_clients: typing.Set[WebsocketImplProtocol] = set()
 async def websocket(request: sanic.Request, ws: WebsocketImplProtocol):
     token = request.args.get('token', None)
     if token is None:
-        await ws.close(1007, '无效参数')
+        await ws.close(1000, '无效参数')
         return
 
     status, user_id = verify_token(token)
     if not status:
-        await ws.close(1008, '未登录')
+        await ws.close(1000, '未登录')
         return
 
     user = (await request.ctx.db_session.execute(select(User).where(User.user_id == user_id))).scalar()
     if user is None:
-        await ws.close(1008, '未登录')
+        await ws.close(1000, '未登录')
         return
 
     websocket_clients.add(ws)
