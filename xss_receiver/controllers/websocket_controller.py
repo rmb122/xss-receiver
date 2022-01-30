@@ -58,3 +58,4 @@ async def subscribe_callback(msg: PublishMessage):
 
 
 publish_subscribe.register_callback(constants.PUBLISH_MESSAGE_TYPE_NEW_HTTP_ACCESS_LOG, subscribe_callback)
+publish_subscribe.register_callback(constants.PUBLISH_MESSAGE_TYPE_NEW_DNS_LOG, subscribe_callback)

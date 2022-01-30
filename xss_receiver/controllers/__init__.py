@@ -7,6 +7,7 @@ from xss_receiver.database import session_maker
 from xss_receiver.utils import add_system_log
 from .auth_controller import auth_controller
 from .config_controller import config_controller
+from .dns_log_controller import dns_log_controller
 from .http_access_log_controller import http_access_log_controller
 from .http_rule_catalog_controller import http_rule_catalog_controller
 from .http_rule_controller import http_rule_controller
@@ -21,6 +22,7 @@ app.blueprint(system_log_controller, url_prefix=system_config.URL_PREFIX + '/api
 app.blueprint(http_rule_controller, url_prefix=system_config.URL_PREFIX + '/api/http_rule')
 app.blueprint(temp_file_controller, url_prefix=system_config.URL_PREFIX + '/api/temp_file')
 app.blueprint(http_access_log_controller, url_prefix=system_config.URL_PREFIX + '/api/http_access_log')
+app.blueprint(dns_log_controller, url_prefix=system_config.URL_PREFIX + '/api/dns_log')
 app.blueprint(auth_controller, url_prefix=system_config.URL_PREFIX + '/api/auth')
 app.blueprint(upload_file_controller, url_prefix=system_config.URL_PREFIX + '/api/upload_file')
 app.blueprint(http_rule_catalog_controller, url_prefix=system_config.URL_PREFIX + '/api/http_rule_catalog')
@@ -33,12 +35,14 @@ app.static(system_config.URL_PREFIX, system_config.FRONTEND_DIR)
 async def server_error_handler(request: sanic.Request, exception):
     if isinstance(exception, sanic.exceptions.FileNotFound):
         return sanic.response.text("", status=404)
+    elif isinstance(exception, sanic.exceptions.MethodNotSupported):
+        return sanic.response.text("", status=405)
     else:
         db_session = session_maker()
         await add_system_log(db_session, f"System error [{str(exception)}] in [{request.path}]", constants.LOG_TYPE_MAIL_SEND_ERROR)
         await db_session.close()
 
-        return sanic.response.text("", status=500)
+        return sanic.response.text("", status=200)
 
 
 app.error_handler.add(Exception, server_error_handler)

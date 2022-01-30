@@ -50,7 +50,10 @@ class PublishSubscribe:
     _before_process_count = 2  # Sanic 本身自己的 Main process 和 Config 里面的 multiprocessing.Manager
     _callbacks: typing.Dict[int, typing.Callable] = {}
 
-    def __init__(self):
+    def __init__(self, system_config):
+        if system_config.ENABLE_DNS_LOG:
+            self._before_process_count += 1  # DNS_LOG 额外启动了一个进程
+
         self._duplex_list = []
         self._opened_txs = []
         self._worker_num = get_worker_num()
@@ -68,14 +71,16 @@ class PublishSubscribe:
     def register_callback(self, msg_type, func):
         self._callbacks[msg_type] = func
 
-    async def open_pipes(self):
+    async def open_pipes(self, tx_only=False):
         if not self.opened() and self._worker_num > 1:
-            identity, = multiprocessing.current_process()._identity
-            self._opened_rx = await self._duplex_list[identity - self._before_process_count].open_rx()
+            if not tx_only:  # 如果只发送, 不需要通过 _identity 这个 hack 的方式来打开属于自己的 rx
+                identity, = multiprocessing.current_process()._identity
+                self._opened_rx = await self._duplex_list[identity - self._before_process_count].open_rx()
             self._opened_txs = [await i.open_tx() for i in self._duplex_list]
         else:
             self._opened_rx = await self._duplex_list[0].open_rx()
             self._opened_txs = [await self._duplex_list[0].open_tx()]
+        self._opened = True
 
     async def subscribe(self):
         while True:

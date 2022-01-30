@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import json
 import os
@@ -9,6 +10,7 @@ import urllib.parse
 from functools import wraps
 
 import aiofiles
+import asyncudp
 import jinja2.sandbox
 import sanic
 from werkzeug.utils import secure_filename
@@ -244,3 +246,25 @@ async def add_system_log(db_session, content, log_type):
     system_log = models.SystemLog(log_content=content, log_type=log_type)
     db_session.add(system_log)
     await db_session.commit()
+
+
+# patch asyncudp
+asyncudp._SocketProtocol.error_received = lambda self, exc: None
+
+
+async def create_async_udp_socket(local_addr=None, remote_addr=None, sock=None):
+    """Create a UDP socket with given local and remote addresses.
+
+    >>> sock = await asyncudp.create_socket(local_addr=('127.0.0.1', 9999))
+
+    """
+
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        asyncudp._SocketProtocol,
+        local_addr=local_addr,
+        remote_addr=remote_addr,
+        sock=sock
+    )
+
+    return asyncudp.Socket(transport, protocol)

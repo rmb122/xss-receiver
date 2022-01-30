@@ -13,19 +13,22 @@ from xss_receiver.models import SystemConfig, User
 from xss_receiver.utils import passwd_hash
 
 _manager = multiprocessing.Manager()
-_CONFIG_CACHE = _manager.dict()
+_CONFIG_CACHE = _manager.dict()  # multiprocessing dict 速度比较慢, 对于不变的 config, 额外开一个 dict 来加速
+_CONFIG_CACHE_CONST = dict()
 
 
 class Config:
     # name: [from_env, public, mutable, default_value, comment]
     _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any, str]] = {
-        'INIT_USER': [True, False, False, 'admin:admin'],
-        'FRONTEND_DIR': [True, False, False, '/dev/shm', ''],
+        'INIT_USER': [True, False, False, 'admin:admin', '默认账户密码'],
+        'FRONTEND_DIR': [True, False, False, '/dev/shm', '静态资源路径'],
         'SECRET_KEY': [True, False, False, os.urandom(32), ''],
-        'URL_PREFIX': [True, False, False, '/admin', ''],
-        'BEHIND_PROXY': [True, False, False, False, ''],
-        'UPLOAD_PATH': [True, False, False, '/dev/shm', ''],
-        'TEMP_FILE_PATH': [True, False, False, '/dev/shm', ''],
+        'URL_PREFIX': [True, False, False, '/admin', '管理面板前缀'],
+        'BEHIND_PROXY': [True, False, False, False, '是否在负载均衡后面'],
+        'UPLOAD_PATH': [True, False, False, '/dev/shm', '上传文件保存路径'],
+        'TEMP_FILE_PATH': [True, False, False, '/dev/shm', '临时文件保存路径'],
+        'ENABLE_DNS_LOG': [True, False, False, True, '是否开启 DNSLOG'],
+        'DNS_LOG_LISTEN_ADDR': [True, False, False, '0.0.0.0', '设置 DNSLOG 监听地址, 避免与系统 DNS 冲突'],
 
         'PASSWORD_SALT': [False, False, False, os.urandom(32).hex(), ''],
         'TEMP_FILE_SAVE': [False, True, True, False, '是否保存临时文件'],
@@ -46,6 +49,8 @@ class Config:
     BEHIND_PROXY: bool
     UPLOAD_PATH: str
     TEMP_FILE_PATH: str
+    ENABLE_DNS_LOG: bool
+    DNS_LOG_LISTEN_ADDR: str
 
     TEMP_FILE_SAVE: bool
     RECV_MAIL_ADDR: str
@@ -94,6 +99,8 @@ class Config:
         db_session = session_maker()
 
         for key, settings in self._CONFIG_KEYS.items():
+            value = None
+
             if settings[0]:  # 优先从 ENV 中取, 之后取默认值
                 value = os.getenv(key)
                 if value is None:
@@ -110,12 +117,16 @@ class Config:
                     elif config_type == bytes:
                         value = value.encode()
 
-                _CONFIG_CACHE[key] = value
             else:
                 stmt = select(SystemConfig).where(SystemConfig.key == key)
                 result: sqlalchemy.engine.result.ChunkedIteratorResult = await db_session.execute(stmt)
                 data: SystemConfig = result.scalar()
-                _CONFIG_CACHE[key] = data.value
+                value = data.value
+
+            if self._CONFIG_KEYS[key][2]:
+                _CONFIG_CACHE[key] = value
+            else:
+                _CONFIG_CACHE_CONST[key] = value
 
         await db_session.close()
         await engine.dispose()
@@ -146,14 +157,17 @@ class Config:
 
     def __getattr__(self, key):
         if key in self._CONFIG_KEYS:
-            return _CONFIG_CACHE[key]
+            if self._CONFIG_KEYS[key][2]:  # mutable == True
+                return _CONFIG_CACHE[key]
+            else:
+                return _CONFIG_CACHE_CONST[key]
         else:
             raise Exception(f'Config key {key} not existed')
 
     def get_public_config(self):
         configs = {}
         for key, settings in self._CONFIG_KEYS.items():
-            if settings[1]:
+            if settings[1]:  # 目前来说, 如果 public, 那么一定是 mutable 的, 这里不用做特殊处理
                 configs[key] = _CONFIG_CACHE[key]
         return configs
 

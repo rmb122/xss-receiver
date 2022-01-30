@@ -35,9 +35,8 @@ class HttpRule(Base):
     write_log: bool = Column(Boolean())
     send_mail: bool = Column(Boolean())
     comment: str = Column(Text())
-    # create_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
-
     catalog_id: int = Column(ForeignKey("http_rule_catalog.catalog_id"))
+    # create_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
     # catalog: HttpRuleCatalog = relationship("HttpRuleCatalog", back_populates="rules")
 
 
@@ -46,8 +45,8 @@ class HttpAccessLog(Base):
     __tablename__ = 'http_access_log'
     log_id: int = Column(Integer(), primary_key=True, autoincrement=True)
     path: str = Column(String(255), index=True)
-    client_ip: str = Column(VARCHAR(42))
-    method: str = Column(VARCHAR(255))
+    client_ip: str = Column(VARCHAR(42), index=True)
+    method: str = Column(VARCHAR(255), index=True)
     arg: dict = Column(JSON())
     body: str = Column(Text())
     file: dict = Column(JSON())
@@ -80,3 +79,16 @@ class User(Base):
     username: str = Column(String(255), index=True)
     password: str = Column(String(64))
     user_type: int = Column(Integer())
+
+
+@dataclass
+class DNSLog(Base):
+    __tablename__ = 'dns_log'
+    log_id: int = Column(Integer(), primary_key=True, autoincrement=True)
+    client_ip: str = Column(VARCHAR(42), index=True)
+    domain: str = Column(String(255), index=True)
+    transaction_id: int = Column(Integer())
+    dns_type: int = Column(Integer(), index=True)
+    dns_class: int = Column(Integer())
+    log_time: str = Column(DateTime(), default=datetime.datetime.utcnow)
+    region: str = ''
