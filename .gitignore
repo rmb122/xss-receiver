@@ -4,4 +4,3 @@ app.db
 *.pyc
 uploads/
 .idea/
-docker/front_dist
