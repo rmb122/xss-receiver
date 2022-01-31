@@ -14,6 +14,8 @@ services:
         restart: always
         depends_on:
             - mysql
+        volumes:
+            - ./:/app
         environment:
             - FRONTEND_DIR=/app/docker/front_dist
             - DATABASE_DSN=mysql+aiomysql://root:app@mysql:3306/app?charset=utf8mb4

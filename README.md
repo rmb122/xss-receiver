@@ -107,7 +107,7 @@ sudo docker-compose up -d
 ```shell
 TARGETURL=http://127.0.0.1/test 
 FILENAME=dump.zip
-BLOCKSIZE=10240
+BLOCKSIZE=102400
 FILESIZE=$(stat -c '%s' $FILENAME) 
 BLOCKCOUNT=$(( $FILESIZE/$BLOCKSIZE+1 ))
 i=0

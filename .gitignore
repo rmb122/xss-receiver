@@ -4,3 +4,4 @@ app.db
 *.pyc
 uploads/
 .idea/
+temp_uploads/
