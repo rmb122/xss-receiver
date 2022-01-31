@@ -27,6 +27,8 @@ async def process_packet(packet_bytes: bytes, remote_addr: typing.Tuple[str, int
     except Exception as e:
         pass
 
+    await session.close()
+
 
 async def start_listen_dns(addr: typing.Tuple[str, int] = ('0.0.0.0', 53)):
     await publish_subscribe.open_pipes(tx_only=True)
