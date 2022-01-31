@@ -55,7 +55,7 @@ sudo docker-compose up -d
 这里不再额外进行介绍  
 模版中会被注入常用的变量和函数, 相关实现在 `xss_receiver/utils.py` 的 `generate_dynamic_template_globals` 函数
 
-这里简单介绍
+这里简单介绍变量和函数的使用方法
 
 #### 变量
 
@@ -67,7 +67,7 @@ sudo docker-compose up -d
 | header    | Dict[str, str]             | HTTP 请求头                                    |
 | arg       | Dict[str, str]             | HTTP GET 参数                                 |
 | body      | str                        | 原始的 body                                    |
-| file      | Dict[str, Tuple[str, str]] | 请求中的文件, key 为文件参数名, value 为文件名和临时保存文件名组成的列表 |
+| file      | Dict[str, Tuple[str, str]] | 请求中的文件, key 为文件参数名, value 为文件名和临时保存文件名组成的元组 |
 
 #### 函数
 
@@ -80,8 +80,6 @@ sudo docker-compose up -d
 | list_directory          | [str] -> List[Tuple[str, bool]]                  | 输入文件夹名, 返回文件管理功能下对应的文件夹中的文件列表, 空字符 '' 代表根目录      |
 | create_directory        | [str] -> None                                    | 创建的文件夹名                                          |
 | delete_directory        | [str] -> None                                    | 删除的文件夹名, 会递归删除其下的文件                              |
-| delete_directory        | [str] -> None                                    | 删除的文件夹名, 会递归删除其下的文件                              |
-| delete_upload_file      | [str] -> None                                    | 删除的文件名                                           |
 | delete_upload_file      | [str] -> None                                    | 删除的文件名                                           |
 | read_upload_file        | [str, Optional[bool]] -> Union[str, bytes]       | 读取文件, 第二个参数为是否以 bytes 类型返回文件内容                   |
 | write_upload_file       | [str, Union[str, bytes], Optional[bool]] -> None | 写入文件, 第三个参数为是否 append 模式写入                       |
@@ -142,3 +140,11 @@ done
 ### 设置
 
 系统设置的值需要符合 JSON 语法. 如果需要关闭新消息的提醒, 也可以在此处, 需要注意此种设置是保存在 localStorage 中而不是服务端.
+
+## 使用截图
+
+![](https://s2.loli.net/2022/02/01/9vLcgMj4EqJRKYN.png)
+![](https://s2.loli.net/2022/02/01/nGtAk1SgdVMc3Ke.png)
+![](https://s2.loli.net/2022/02/01/UzJyRP5lxeKp7rX.png)
+![](https://s2.loli.net/2022/02/01/JQpLYfkrBA34W1a.png)
+![](https://s2.loli.net/2022/02/01/c3Wzvbn6mK4rJtA.png)
