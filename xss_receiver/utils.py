@@ -185,7 +185,7 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
             return await read_file(os.path.join(system_config.UPLOAD_PATH, filename), read_mode)
 
     async def write_upload_file(filename, content, append=False):
-        if isinstance(filename, str) and isinstance(append, bool) and (isinstance(content, str) or isinstance(content, bytes)):
+        if isinstance(filename, str) and isinstance(append, bool) and isinstance(content, (str, bytes)):
             filename = secure_filename_with_directory(filename)
 
             if append:

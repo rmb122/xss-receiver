@@ -1,4 +1,5 @@
 import asyncio
+import typing
 from base64 import b64encode
 from json import dumps
 from os.path import exists, join
@@ -77,7 +78,7 @@ async def mapping(request: sanic.Request, path=''):
         await request.ctx.db_session.commit()
 
         message = PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_HTTP_ACCESS_LOG, msg_content=path)
-        asyncio.create_task(publish_subscribe.publish(message))
+        publish_subscribe.publish(message)
 
     if rule.send_mail:
         asyncio.create_task(send_mail(path, f"Client IP: {client_ip}\n\n"

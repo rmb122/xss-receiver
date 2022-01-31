@@ -93,15 +93,15 @@ class PublishSubscribe:
             if msg.msg_type in self._callbacks:
                 asyncio.create_task(self._callbacks[msg.msg_type](msg))
 
-    async def publish(self, data: PublishMessage):
+    def publish(self, data: PublishMessage):
         data = data.to_json()
         data = data.encode()
         for tx in self._opened_txs:
             length = len(data)
             length_bytes = struct.pack('>I', length)
-
-            tx.write(length_bytes)
-            tx.write(data)
+            # 这里存在潜在的冲突可能, 理论上需要 semaphore / flock 之类的加锁
+            # 但是目前还没碰到炸掉的情况, 就先不管了, 真有问题就不折腾换 redis 算了 (逃
+            tx.write(length_bytes + data)
 
 
 def register_publish_subscribe(app: sanic.Sanic, publish_subscribe: PublishSubscribe):

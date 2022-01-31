@@ -23,7 +23,7 @@ async def process_packet(packet_bytes: bytes, remote_addr: typing.Tuple[str, int
             session.add(dns_log)
             await session.commit()
 
-            await publish_subscribe.publish(PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_DNS_LOG, msg_content=packet.q.qname.idna()))
+            publish_subscribe.publish(PublishMessage(msg_type=constants.PUBLISH_MESSAGE_TYPE_NEW_DNS_LOG, msg_content=packet.q.qname.idna()))
     except Exception as e:
         pass
 

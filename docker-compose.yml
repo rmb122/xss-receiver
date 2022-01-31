@@ -19,10 +19,12 @@ services:
             - DATABASE_DSN=mysql+aiomysql://root:app@mysql:3306/app?charset=utf8mb4
             - UPLOAD_PATH=/app/uploads
             - TEMP_FILE_PATH=/app/temp_uploads
+            - ENABLE_DNS_LOG=True
 
             - BEHIND_PROXY=False
             - URL_PREFIX=/admin        # admin panel's URL prefix, use http://example.com/admin/index.html to access it
-            - INIT_USER=admin:admin  # user created after first start
+            - INIT_USER=admin:admin    # admin user created after first startup
         ports:
-            - "80:8080" # or if you want to reverse proxy, change BEHIND_PROXY=False to BEHIND_PROXY=True, and using X-Real-IP to trasnfer IP
+            - "80:80"       # or if you want to warp a reverse proxy, change BEHIND_PROXY=False to BEHIND_PROXY=True, and using `X-Real-IP` to transfer client ip
+            # - "53:53/udp" # dns port mapping setting, you need uncomment this to enable dns log function, and maybe need to specific ip address, more information see README.md
             # - "127.0.0.1:8080:8080"
