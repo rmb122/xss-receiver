@@ -78,7 +78,8 @@ class PublishSubscribe:
                 self._opened_rx = await self._duplex_list[identity - self._before_process_count].open_rx()
             self._opened_txs = [await i.open_tx() for i in self._duplex_list]
         else:
-            self._opened_rx = await self._duplex_list[0].open_rx()
+            if not tx_only:
+                self._opened_rx = await self._duplex_list[0].open_rx()
             self._opened_txs = [await self._duplex_list[0].open_tx()]
         self._opened = True
 
