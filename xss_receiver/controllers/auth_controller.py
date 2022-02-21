@@ -33,7 +33,7 @@ async def login(request: sanic.Request):
             token = sign_token(user.user_id)
 
             if system_config.BEHIND_PROXY:
-                client_ip = request.headers.get(constants.REAL_IP_HEADER)
+                client_ip = request.headers.get(constants.REAL_IP_HEADER, 'Header not found')
             else:
                 client_ip = request.ip
 
