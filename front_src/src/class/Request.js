@@ -23,11 +23,11 @@ class Request {
 
     set_jwt(jwt) {
         this.jwt = jwt;
-        localStorage.setItem(utils.localstorage_keys.AUTHORIZATION, jwt);
+        utils.save_localstorage(utils.localstorage_keys.AUTHORIZATION, jwt);
     }
 
     load_jwt() {
-        let jwt = localStorage.getItem(utils.localstorage_keys.AUTHORIZATION);
+        let jwt = utils.load_localstorage(utils.localstorage_keys.AUTHORIZATION, false);
         if (jwt) {
             this.jwt = jwt;
             return true;

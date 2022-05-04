@@ -197,7 +197,11 @@ export default {
             this.user.form_username = row.username;
         },
         async register_user() {
-            let res = await user.register_user(this.user.form_username, this.user.form_password);
+            let username = this.user.form_username;
+            let password = this.user.form_password;
+            password = utils.pbkdf2(password, username);
+
+            let res = await user.register_user(username, password);
             if (res.code === request.CODE_SUCCESS) {
                 this.$message.success("注册成功");
                 this.user.form_visible = false;

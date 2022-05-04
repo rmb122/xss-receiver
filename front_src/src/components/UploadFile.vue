@@ -23,10 +23,13 @@
                             </el-button>
 
                             <el-table
+                                ref="table"
                                 :data="this.files"
+                                :expand-row-keys="this.get_expand_row_keys()"
                                 :tree-props="{children: 'children'}"
                                 :indent="48"
-                                default-expand-all
+                                @expand-change="this.row_expand_change"
+                                @row-dblclick="this.switch_row_expand"
                                 row-key="path"
                                 row-class-name="less-table-padding"
                                 style="width: 100%;">
@@ -40,11 +43,11 @@
                                         </template>
                                         <template v-else>
                                             <template v-if="scope.row.children !== undefined && scope.row.children.length === 0 ">
-                                                <div class="el-table__expand-icon" style="display: inline-block; width: 20px; line-height: 20px; height: 20px; text-align: center; margin-right: 3px" onclick="this.class">
-                                                    <i class="el-icon-arrow-down"></i>
+                                                <div class="el-table__expand-icon el-table__expand-icon--expanded" style="display: inline-block; width: 20px; line-height: 20px; height: 20px; text-align: center; margin-right: 3px">
+                                                    <i class="el-icon-arrow-right"></i>
                                                 </div>
                                             </template>
-                                            {{ scope.row.filename }}
+                                            {{ scope.row.filename }}/
                                         </template>
                                     </template>
                                 </el-table-column>
@@ -72,7 +75,7 @@
                                         </template>
                                     </template>
                                 </el-table-column>
-                                <el-table-column label="操作" width="250" align="center">
+                                <el-table-column label="操作" width="300" align="center">
                                     <template slot-scope="scope">
                                         <template v-if="!scope.row.dir">
                                             <el-button type="primary" size="mini" @click="edit_file(scope.row)">编辑
@@ -83,6 +86,8 @@
                                             </el-button>
                                         </template>
                                         <template v-else>
+                                            <el-button type="primary" size="mini" @click="new_file_with_directory(scope.row)">新建文件
+                                            </el-button>
                                             <el-button type="primary" size="mini" @click="modify_directory(scope.row)">重命名
                                             </el-button>
                                             <el-button type="danger" size="mini" @click="delete_directory(scope.row)">删除
@@ -125,6 +130,7 @@ import file from "../class/UploadFile";
 import request from "../class/Request";
 import http_rule_catalog from "@/class/HttpRuleCatalog";
 import upload_file from "../class/UploadFile";
+import utils from "@/class/Utils";
 
 export default {
     name: "UploadFile",
@@ -177,6 +183,21 @@ export default {
                 this.$message.error(res.msg);
             }
             this.refresh_file();
+        },
+        get_expand_row_keys() {
+          return Object.keys(utils.load_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, {}));
+        },
+        row_expand_change(row, expanded) {
+            let current_expand_rows = utils.load_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, {});
+            if (expanded) {
+                current_expand_rows[row.path] = expanded;
+            } else {
+                delete current_expand_rows[row.path];
+            }
+            utils.save_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, current_expand_rows);
+        },
+        switch_row_expand(row) {
+          this.$refs.table.toggleRowExpansion(row);
         },
         convert_size(size) {
             let i = -1;
@@ -238,6 +259,18 @@ export default {
             this.editor_acquire_resolver();
         },
         async submit_file(exit) {
+            let expand_dir_row = (filename) => {
+                // 展开对应文件夹
+                let slash_idx = this.edit_curr_filename.indexOf("/");
+                if (slash_idx !== -1) {
+                    let dir_path = this.edit_curr_filename.substring(0, slash_idx);
+                    let rows = this.files.filter((e) => e.path === dir_path);
+                    if (rows.length > 0) {
+                        this.$refs.table.toggleRowExpansion(rows[0], true);
+                    }
+                }
+            }
+
             if (this.edit_curr_filename.trim() === "") {
                 this.$message.error("文件名不能为空");
                 return;
@@ -247,8 +280,14 @@ export default {
                 let f = new File([new Blob([this.ace_editor.getValue()])], this.edit_curr_filename);
                 let res = await file.upload_file(f);
                 if (res.code === request.CODE_SUCCESS) {
-                    this.edit_file_dialog_visible = false;
-                    this.refresh_file();
+                    if (exit) {
+                      this.edit_file_dialog_visible = false;
+                    } else {
+                      // 如果不退出, 切换到编辑模式
+                      this.edit_original_filename = this.edit_curr_filename;
+                      this.edit_new_file = false;
+                    }
+                    this.refresh_file().then(() => {expand_dir_row(this.edit_curr_filename)});
                     this.$message.success(res.msg);
                 } else {
                     this.$message.error(res.msg);
@@ -268,8 +307,11 @@ export default {
                 if (res.code === request.CODE_SUCCESS) {
                     if (exit) {
                         this.edit_file_dialog_visible = false;
+                    } else {
+                        this.edit_original_filename = this.edit_curr_filename;
                     }
-                    this.refresh_file();
+
+                    this.refresh_file().then(() => {expand_dir_row(this.edit_curr_filename)});
                     this.$message.success(res.msg);
                 } else {
                     this.$message.error(res.msg);
@@ -279,6 +321,12 @@ export default {
         new_file() {
             this.edit_new_file = true;
             this.edit_curr_filename = "";
+            this.edit_file_dialog_visible = true;
+            this.editor_loading = true;
+        },
+        new_file_with_directory(row) {
+            this.edit_new_file = true;
+            this.edit_curr_filename = row.path + "/";
             this.edit_file_dialog_visible = true;
             this.editor_loading = true;
         },

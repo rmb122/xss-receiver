@@ -5,3 +5,4 @@ app.db
 uploads/
 .idea/
 temp_uploads/
+venv/

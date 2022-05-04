@@ -1,15 +1,18 @@
 import * as sha256 from "fast-sha256";
 
 class Utils {
+    localstorage_key_prefix = "XSS_"
+
     localstorage_keys = {
         HTTP_ACCESS_LOG_PER_PAGE: 'HTTP_ACCESS_LOG_PER_PAGE',
         DNS_LOG_PER_PAGE: 'DNS_LOG_PER_PAGE',
         SYSTEM_LOG_PER_PAGE: 'SYSTEM_LOG_PER_PAGE',
         CURRENT_USERNAME: 'CURRENT_USERNAME',
         CURRENT_USERTYPE: 'CURRENT_USERTYPE',
-        AUTHORIZATION: "Authorization",
+        AUTHORIZATION: "AUTHORIZATION",
         HTTP_ACCESS_LOG_NOTIFICATION: "HTTP_ACCESS_LOG_NOTIFICATION",
-        DNS_LOG_NOTIFICATION: "DNS_LOG_NOTIFICATION"
+        DNS_LOG_NOTIFICATION: "DNS_LOG_NOTIFICATION",
+        FILE_EXPAND_ROW_KEYS: "FILE_EXPAND_ROW_KEYS",
     };
 
     user_type = {
@@ -111,16 +114,20 @@ class Utils {
 
 
     save_localstorage(key, value) {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        window.localStorage.setItem(utils.localstorage_key_prefix + key, JSON.stringify(value));
     }
 
     load_localstorage(key, default_value = null) {
-        let result = JSON.parse(window.localStorage.getItem(key));
+        let result = JSON.parse(window.localStorage.getItem(utils.localstorage_key_prefix + key));
         if (result === null) {
             return default_value;
         } else {
             return result;
         }
+    }
+
+    remove_localstorage(key) {
+        window.localStorage.removeItem(utils.localstorage_key_prefix + key);
     }
 
     to_local_time(s) {

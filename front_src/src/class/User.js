@@ -39,7 +39,7 @@ class User {
     }
 
     get_jwt() {
-        return window.localStorage.getItem(utils.localstorage_keys.AUTHORIZATION);
+        return utils.load_localstorage(utils.localstorage_keys.AUTHORIZATION);
     }
 
     is_admin() {
@@ -48,7 +48,7 @@ class User {
 
     logout() {
         this._is_login = false;
-        localStorage.removeItem('Authorization');
+        utils.remove_localstorage(utils.localstorage_keys.AUTHORIZATION);
     }
 
     async change_password(original_password, new_password) {

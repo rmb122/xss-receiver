@@ -129,7 +129,7 @@
                                     <el-col :span="16" style="text-align: center">
                                         <a href="javascript:" style="color: dodgerblue;"
                                            v-clipboard:success="copy_success"
-                                           v-clipboard:copy="scope.row.body_json['ESCAPED_DATA']">数据存在无法解码内容, 点击复制</a>
+                                           v-clipboard:copy="scope.row.body_json['ESCAPED_DATA']">数据存在无法解码内容, 点击复制 base64 后内容</a>
                                     </el-col>
                                 </el-row>
                             </template>
@@ -375,7 +375,7 @@ export default {
                         }
                         break;
                     case utils.body_type.BODY_TYPE_ESCAPED:
-                        body_json = {"ESCAPED_DATA": body_json};
+                        body_json = {"ESCAPED_DATA": body_raw};
                         body_keys = ["ESCAPED_DATA"];
                         break;
                     case utils.body_type.BODY_TYPE_TOO_LONG:
