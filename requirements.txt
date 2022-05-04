@@ -9,3 +9,4 @@ aiomysql~=0.0.22
 ipaddr~=2.2.0
 asyncudp~=0.6.0
 dnslib~=0.9.19
+pylru~=1.2.1

@@ -28,6 +28,7 @@ class Config:
         'UPLOAD_PATH': [True, False, False, '/dev/shm', '上传文件保存路径'],
         'TEMP_FILE_PATH': [True, False, False, '/dev/shm', '临时文件保存路径'],
         'ENABLE_DNS_LOG': [True, False, False, True, '是否开启 DNSLOG'],
+        'DNS_KEY': [True, False, False, '', 'DNS KEY'],
         'DNS_LOG_LISTEN_ADDR': [True, False, False, '0.0.0.0', '设置 DNSLOG 监听地址, 避免与系统 DNS 冲突'],
 
         'PASSWORD_SALT': [False, False, False, os.urandom(32).hex(), ''],
@@ -50,6 +51,7 @@ class Config:
     UPLOAD_PATH: str
     TEMP_FILE_PATH: str
     ENABLE_DNS_LOG: bool
+    DNS_KEY: str
     DNS_LOG_LISTEN_ADDR: str
 
     TEMP_FILE_SAVE: bool

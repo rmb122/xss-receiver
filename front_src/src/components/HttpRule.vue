@@ -13,9 +13,12 @@
                             </div>
 
                             <el-table
+                                ref="table"
                                 :data="this.rules"
                                 :tree-props="{children: 'rules'}"
                                 :indent="0"
+                                @expand-change="this.row_expand_change"
+                                @row-dblclick="this.switch_row_expand"
                                 style="width: 100%;"
                                 row-key="index"
                                 default-expand-all
@@ -333,7 +336,35 @@ export default {
                 index += 1;
             }
             this.rules = catalogs;
+
+            let no_expand_row_key = this.get_no_expand_row_keys();
+            this.rules.forEach((row) => {
+                // 记忆折叠的历史
+                if (no_expand_row_key.indexOf(row.catalog_name) !== -1) {
+                    setTimeout(() => {
+                        if (this.$refs.table) {
+                            this.$refs.table.toggleRowExpansion(row, false);
+                        }
+                    }, 0);
+                }
+            });
+
             this.rule_loading = false;
+        },
+        get_no_expand_row_keys() {
+            return Object.keys(utils.load_localstorage(utils.localstorage_keys.RULE_NO_EXPAND_ROW_KEYS, {}));
+        },
+        row_expand_change(row, expanded) {
+            let current_no_expand_rows = utils.load_localstorage(utils.localstorage_keys.RULE_NO_EXPAND_ROW_KEYS, {});
+            if (!expanded) {
+                current_no_expand_rows[row.catalog_name] = true;
+            } else {
+                delete current_no_expand_rows[row.catalog_name];
+            }
+            utils.save_localstorage(utils.localstorage_keys.RULE_NO_EXPAND_ROW_KEYS, current_no_expand_rows);
+        },
+        switch_row_expand(row) {
+            this.$refs.table.toggleRowExpansion(row);
         },
         start_edit(row) {
             if (this.last_edit_index != null && this.last_edit_index != row.index) {

@@ -25,11 +25,11 @@
                             <el-table
                                 ref="table"
                                 :data="this.files"
-                                :expand-row-keys="this.get_expand_row_keys()"
                                 :tree-props="{children: 'children'}"
                                 :indent="48"
                                 @expand-change="this.row_expand_change"
                                 @row-dblclick="this.switch_row_expand"
+                                default-expand-all
                                 row-key="path"
                                 row-class-name="less-table-padding"
                                 style="width: 100%;">
@@ -173,6 +173,18 @@ export default {
 
             this.files = process_file_list(files);
 
+            let no_expand_row_key = this.get_no_expand_row_keys();
+            this.files.forEach((row) => {
+                // 记忆折叠的历史
+                if (no_expand_row_key.indexOf(row.path) !== -1) {
+                    setTimeout(() => {
+                        if (this.$refs.table) {
+                            this.$refs.table.toggleRowExpansion(row, false);
+                        }
+                    }, 0);
+                }
+            });
+
             this.file_loading = false;
         },
         async upload_file(req) {
@@ -184,17 +196,17 @@ export default {
             }
             this.refresh_file();
         },
-        get_expand_row_keys() {
-          return Object.keys(utils.load_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, {}));
+        get_no_expand_row_keys() {
+          return Object.keys(utils.load_localstorage(utils.localstorage_keys.FILE_NO_EXPAND_ROW_KEYS, {}));
         },
         row_expand_change(row, expanded) {
-            let current_expand_rows = utils.load_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, {});
-            if (expanded) {
-                current_expand_rows[row.path] = expanded;
+            let current_no_expand_rows = utils.load_localstorage(utils.localstorage_keys.FILE_NO_EXPAND_ROW_KEYS, {});
+            if (!expanded) {
+                current_no_expand_rows[row.path] = true;
             } else {
-                delete current_expand_rows[row.path];
+                delete current_no_expand_rows[row.path];
             }
-            utils.save_localstorage(utils.localstorage_keys.FILE_EXPAND_ROW_KEYS, current_expand_rows);
+            utils.save_localstorage(utils.localstorage_keys.FILE_NO_EXPAND_ROW_KEYS, current_no_expand_rows);
         },
         switch_row_expand(row) {
           this.$refs.table.toggleRowExpansion(row);
@@ -259,18 +271,6 @@ export default {
             this.editor_acquire_resolver();
         },
         async submit_file(exit) {
-            let expand_dir_row = (filename) => {
-                // 展开对应文件夹
-                let slash_idx = this.edit_curr_filename.indexOf("/");
-                if (slash_idx !== -1) {
-                    let dir_path = this.edit_curr_filename.substring(0, slash_idx);
-                    let rows = this.files.filter((e) => e.path === dir_path);
-                    if (rows.length > 0) {
-                        this.$refs.table.toggleRowExpansion(rows[0], true);
-                    }
-                }
-            }
-
             if (this.edit_curr_filename.trim() === "") {
                 this.$message.error("文件名不能为空");
                 return;
@@ -287,7 +287,7 @@ export default {
                       this.edit_original_filename = this.edit_curr_filename;
                       this.edit_new_file = false;
                     }
-                    this.refresh_file().then(() => {expand_dir_row(this.edit_curr_filename)});
+                    this.refresh_file();
                     this.$message.success(res.msg);
                 } else {
                     this.$message.error(res.msg);
@@ -311,7 +311,7 @@ export default {
                         this.edit_original_filename = this.edit_curr_filename;
                     }
 
-                    this.refresh_file().then(() => {expand_dir_row(this.edit_curr_filename)});
+                    this.refresh_file();
                     this.$message.success(res.msg);
                 } else {
                     this.$message.error(res.msg);
