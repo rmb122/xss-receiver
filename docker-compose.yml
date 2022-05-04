@@ -22,6 +22,7 @@ services:
             - UPLOAD_PATH=/app/uploads
             - TEMP_FILE_PATH=/app/temp_uploads
             - ENABLE_DNS_LOG=True
+            - DNS_KEY=
 
             - BEHIND_PROXY=False
             - URL_PREFIX=/admin        # admin panel's URL prefix, use http://example.com/admin/index.html to access it

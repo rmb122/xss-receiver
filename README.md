@@ -127,7 +127,17 @@ done
 因为很多 Linux 都会在本地启动一个 DNS 服务器, 直接监听 `0.0.0.0:53` 不会成功, 所以默认在 docker-compose 中不启用 DNS Log, 需要使用这个功能需要将 `53:53/udp` 改为 `x.x.x.x:53:53/udp` 
 其中 `x.x.x.x` 为除了 `0.0.0.0` 之外的监听的 IP 地址  
 
-另外目前国内不允许架设私有的 DNS 服务器, 且如果要实现 dns rebinding 等功能相关逻辑过于复杂, 故系统内没有实现响应相关功能, 只实现了对请求进行记录
+目前还实现了一个简易的响应系统, 可以用于 dns rebinding, 响应结果取决于请求的域名中的信息, 格式为  
+```
+((ipv4_addr|ipv6_addr).(time)?){1,}.xxx.com
+```
+其中 `ipv4_addr` 和 `ipv6_addr` 需要将地址中对应的 . 或者 : 替换成下划线, 另外 ipv6 地址不支持通过 :: 缩写.  
+例如: 
+`1_1_1_1.2.2_2_2_2.ffff_ffff_ffff_ffff_ffff_ffff_ffff_ffff.xxx.dns.sss.com` 前两次查询会返回 `1.1.1.1`, 第三次查询会返回 `2.2.2.2`, 第四次会返回 `ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff`, 而第五次又会重新开始, 返回 `1.1.1.1`
+
+另外可以配置 `DNS_KEY`, 系统会检查请求的域名中是否存在配置的 `DNS_KEY`, 例如配置成 `DNS_KEY=dns` 那么 `1_1_1_1.dns.xx.com` 才会返回结果, `1_1_1_1.xx.com` 是不行的  
+
+用于统计次数的缓存采用 LRU, 大小默认 1024, cache 的 key 是 `remote_addr + "@" + remote_ip`  
 
 ### 系统日志
 
