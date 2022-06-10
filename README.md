@@ -27,7 +27,7 @@ git clone https://github.com/rmb122/xss-receiver.git
 
 * `URL_PREFIX` 为管理面板的路径, 建议修改为不易猜出的路径, 例如 `/e7ca70a07ec48cdc74c2217f55d08c383d37e62d`
 * `INIT_USER` 为初始的管理员登录帐号和登录密码, 用 `:` 分隔
-* `BEHIND_PROXY` 决定是否从 `X-Real-IP` Header 中取值作为客户端 IP
+* `BEHIND_PROXY` 决定是否从 `X-Real-IP` 和 `X-Real-Port` Header 中取值作为客户端 IP, 端口
 
 然后
 
@@ -59,15 +59,16 @@ sudo docker-compose up -d
 
 #### 变量
 
-| 变量名       | 类型                         | 备注                                          |
-|-----------|----------------------------|---------------------------------------------|
-| client_ip | str                        | 客户端 IP                                      |
-| path      | str                        | 访问的路径                                       |
-| method    | str                        | HTTP 方法                                     |
-| header    | Dict[str, str]             | HTTP 请求头                                    |
-| arg       | Dict[str, str]             | HTTP GET 参数                                 |
-| body      | str                        | 原始的 body                                    |
-| file      | Dict[str, Tuple[str, str]] | 请求中的文件, key 为文件参数名, value 为文件名和临时保存文件名组成的元组 |
+| 变量名         | 类型                         | 备注                                          |
+|-------------|----------------------------|---------------------------------------------|
+| client_ip   | str                        | 客户端 IP                                      |
+| client_port | int                        | 客户端端口                                       |
+| path        | str                        | 访问的路径                                       |
+| method      | str                        | HTTP 方法                                     |
+| header      | Dict[str, str]             | HTTP 请求头                                    |
+| arg         | Dict[str, str]             | HTTP GET 参数                                 |
+| body        | str                        | 原始的 body                                    |
+| file        | Dict[str, Tuple[str, str]] | 请求中的文件, key 为文件参数名, value 为文件名和临时保存文件名组成的元组 |
 
 #### 函数
 

@@ -30,7 +30,9 @@ async def add(request: sanic.Request):
                 query = select(HttpRule).where(HttpRule.path == path)
                 rule = (await request.ctx.db_session.execute(query)).scalar()
                 if rule is None:
-                    rule = HttpRule(path=path, rule_type=rule_type, filename=filename, write_log=write_log, send_mail=send_mail, comment=comment, catalog_id=catalog_id)
+                    rule = HttpRule(
+                        path=path, rule_type=rule_type, filename=filename, write_log=write_log, send_mail=send_mail, comment=comment, catalog_id=catalog_id
+                    )
                     request.ctx.db_session.add(rule)
                     await request.ctx.db_session.commit()
                     return json(Response.success('添加成功'))

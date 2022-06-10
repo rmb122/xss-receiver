@@ -46,6 +46,7 @@ class HttpAccessLog(Base):
     log_id: int = Column(Integer(), primary_key=True, autoincrement=True)
     path: str = Column(String(255), index=True)
     client_ip: str = Column(VARCHAR(42), index=True)
+    client_port: int = Column(Integer())
     method: str = Column(VARCHAR(255), index=True)
     arg: dict = Column(JSON())
     body: str = Column(Text())

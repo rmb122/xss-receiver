@@ -28,6 +28,6 @@ services:
             - URL_PREFIX=/admin        # admin panel's URL prefix, use http://example.com/admin/index.html to access it
             - INIT_USER=admin:admin    # admin user created after first startup
         ports:
-            - "80:80"       # or if you want to warp a reverse proxy, change BEHIND_PROXY=False to BEHIND_PROXY=True, and using `X-Real-IP` to transfer client ip
+            - "80:80"       # or if you want to warp a reverse proxy, change BEHIND_PROXY=False to BEHIND_PROXY=True, and using `X-Real-IP` and `X-Real-Port` to transfer client ip and port
             # - "53:53/udp" # dns port mapping setting, you need uncomment this to enable dns log function, and maybe need to specific ip address, more information see README.md
             # - "127.0.0.1:8080:8080"

@@ -9,8 +9,8 @@
                                 新建文件夹
                             </el-button>
                             <el-upload
-                                class="upload-demo"
                                 action=""
+                                :data="''"
                                 :show-file-list="false"
                                 :http-request="upload_file"
                                 style="display: inline; margin-left: 10px">
@@ -75,7 +75,7 @@
                                         </template>
                                     </template>
                                 </el-table-column>
-                                <el-table-column label="操作" width="300" align="center">
+                                <el-table-column label="操作" width="380" align="center">
                                     <template slot-scope="scope">
                                         <template v-if="!scope.row.dir">
                                             <el-button type="primary" size="mini" @click="edit_file(scope.row)">编辑
@@ -86,6 +86,14 @@
                                             </el-button>
                                         </template>
                                         <template v-else>
+                                            <el-upload
+                                                action=""
+                                                :data="scope.row.filename"
+                                                :show-file-list="false"
+                                                :http-request="upload_file"
+                                                style="display: inline; margin-right: 10px">
+                                              <el-button type="primary" size="mini">上传文件</el-button>
+                                            </el-upload>
                                             <el-button type="primary" size="mini" @click="new_file_with_directory(scope.row)">新建文件
                                             </el-button>
                                             <el-button type="primary" size="mini" @click="modify_directory(scope.row)">重命名
@@ -128,8 +136,6 @@
 <script>
 import file from "../class/UploadFile";
 import request from "../class/Request";
-import http_rule_catalog from "@/class/HttpRuleCatalog";
-import upload_file from "../class/UploadFile";
 import utils from "@/class/Utils";
 
 export default {
@@ -188,6 +194,14 @@ export default {
             this.file_loading = false;
         },
         async upload_file(req) {
+            if (req.data !== "") {
+                // rename file
+                req.file = new File([req.file], req.data + "/" + req.file.name, {
+                  type: req.file.type,
+                  lastModified: req.file.lastModified,
+                });
+            }
+
             let res = await file.upload_file(req.file);
             if (res.code === request.CODE_SUCCESS) {
                 this.$message.success(res.msg);
@@ -361,7 +375,7 @@ export default {
                 closeOnClickModal: false,
                 dangerouslyUseHTMLString: true
             }).then(async ({ value }) => {
-                let res = await upload_file.add_directory(value)
+                let res = await file.add_directory(value)
                 if (res.code === request.CODE_SUCCESS) {
                     this.refresh_file();
                     this.$message.success(res.msg);
@@ -378,7 +392,7 @@ export default {
                 type: 'warning',
                 dangerouslyUseHTMLString: true
             }).then(async () => {
-                if (await upload_file.delete_directory(row.filename)) {
+                if (await file.delete_directory(row.filename)) {
                     this.refresh_file();
                     this.$message.success("删除成功");
                 } else {
@@ -393,7 +407,7 @@ export default {
                 cancelButtonText: '取消',
                 closeOnClickModal: false,
             }).then(async ({ value }) => {
-                let res = await upload_file.modify_directory(row.filename, value)
+                let res = await file.modify_directory(row.filename, value)
                 if (res.code === request.CODE_SUCCESS) {
                     this.refresh_file();
                     this.$message.success(res.msg);

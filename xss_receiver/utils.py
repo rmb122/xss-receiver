@@ -127,7 +127,7 @@ def secure_filename_with_directory(filename: str):
     return full_path.strip(os.sep)  # 应该是不需要的, 以防万一
 
 
-def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, path, method, header, arg, body, file, extra_output):
+def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, client_port, path, method, header, arg, body, file, extra_output):
     _globals = {}
 
     def add_header(name, value):
@@ -232,6 +232,7 @@ def generate_dynamic_template_globals(system_config, request: sanic.Request, res
     _globals['url_parse_qs'] = catch_exception(urllib.parse.parse_qs)
 
     _globals['client_ip'] = client_ip
+    _globals['client_port'] = client_port
     _globals['path'] = path
     _globals['method'] = method
     _globals['header'] = header

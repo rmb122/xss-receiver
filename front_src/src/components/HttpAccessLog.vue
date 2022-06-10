@@ -308,6 +308,7 @@ export default {
                 log.index = key;
                 log.misc = {
                     'client_ip': log.client_ip,
+                    'client_port': log.client_port,
                     'time': log.log_time,
                     'region': log.region,
                     'path': log.path,

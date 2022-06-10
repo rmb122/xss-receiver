@@ -90,7 +90,11 @@ class Config:
 
         if count == 0:
             init_username, init_password = self.INIT_USER.split(':', 2)
-            user = User(username=init_username, password=passwd_hash(passwd_hash(init_password, init_username), self.PASSWORD_SALT), user_type=constants.USER_TYPE_SUPER_ADMIN)
+            user = User(
+                username=init_username,
+                password=passwd_hash(passwd_hash(init_password, init_username), self.PASSWORD_SALT),
+                user_type=constants.USER_TYPE_SUPER_ADMIN
+            )
             db_session.add(user)
             await db_session.commit()
 

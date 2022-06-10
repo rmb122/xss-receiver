@@ -14,7 +14,8 @@ from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
 from xss_receiver.publish_subscribe import PublishMessage
-from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, generate_dynamic_template_globals, add_system_log, secure_filename_with_directory
+from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, \
+    generate_dynamic_template_globals, add_system_log, secure_filename_with_directory
 
 index_controller = sanic.Blueprint('index_controller', __name__)
 
@@ -33,8 +34,10 @@ async def mapping(request: sanic.Request, path=''):
 
     if system_config.BEHIND_PROXY:
         client_ip = request.headers.get(constants.REAL_IP_HEADER, 'Header not found')
+        client_port = request.headers.get(constants.REAL_PORT_HEADER, -1)
     else:
         client_ip = request.ip
+        client_port = request.port
 
     method = request.method
     header = fix_upper_case(dict(request.headers))
@@ -71,7 +74,7 @@ async def mapping(request: sanic.Request, path=''):
             body = ""
             body_type = constants.BODY_TYPE_TOO_LONG
 
-        access_log = HttpAccessLog(path=path, client_ip=client_ip, method=method, arg=arg,
+        access_log = HttpAccessLog(path=path, client_ip=client_ip, client_port=client_port, method=method, arg=arg,
                                    body=body, file=file, header=header, body_type=body_type)
 
         request.ctx.db_session.add(access_log)
@@ -92,7 +95,9 @@ async def mapping(request: sanic.Request, path=''):
         if rule.rule_type == constants.RULE_TYPE_DYNAMIC_TEMPLATE:
             response = sanic.HTTPResponse('', 200, {}, 'text/html; charset=utf-8')
             extra_output = []
-            _globals = generate_dynamic_template_globals(system_config, request, response, client_ip, path, method, header, arg, raw_body_str, file, extra_output)
+            _globals = generate_dynamic_template_globals(
+                system_config, request, response, client_ip, client_port, path, method, header, arg, raw_body_str, file, extra_output
+            )
             template_result, error = await render_dynamic_template((await read_file(filepath)).decode(), _globals)
             response.body = template_result.encode() + b''.join(extra_output)
 
