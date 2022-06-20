@@ -15,6 +15,7 @@ from xss_receiver.utils import passwd_hash
 _manager = multiprocessing.Manager()
 _CONFIG_CACHE = _manager.dict()  # multiprocessing dict 速度比较慢, 对于不变的 config, 额外开一个 dict 来加速
 _CONFIG_CACHE_CONST = dict()
+_running_setter_tasks = set()
 
 
 class Config:
@@ -63,8 +64,6 @@ class Config:
     SEND_MAIL_SMTP_SSL: bool
     MAX_PREVIEW_SIZE: int
     MAX_TEMP_UPLOAD_SIZE: int
-
-    _running_setter_tasks: set
 
     async def _init_config_table(self):
         db_session = session_maker()
@@ -140,7 +139,6 @@ class Config:
         await engine.dispose()
 
     def __init__(self):
-        self._running_setter_tasks = set()
         asyncio.run(self._init_config_table())
         asyncio.run(self._load_configs())
         asyncio.run(self._init_admin())
@@ -161,8 +159,8 @@ class Config:
                 await db_session.close()
 
             task = asyncio.create_task(_update_database())
-            self._running_setter_tasks.add(task)
-            task.add_done_callback(lambda x: self._running_setter_tasks.remove(task))
+            _running_setter_tasks.add(task)
+            task.add_done_callback(lambda x: _running_setter_tasks.remove(task))
         else:
             raise Exception(f'Config key {key} not existed or not mutable')
 
