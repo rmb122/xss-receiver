@@ -84,6 +84,7 @@ class PublishSubscribe:
         self._opened = True
 
     async def subscribe(self):
+        running_tasks = set()
         while True:
             length_bytes = await self._opened_rx.read(4)
             length, = struct.unpack('>I', length_bytes)
@@ -92,7 +93,9 @@ class PublishSubscribe:
             msg = PublishMessage.from_json(payload.decode())
 
             if msg.msg_type in self._callbacks:
-                asyncio.create_task(self._callbacks[msg.msg_type](msg))
+                task = asyncio.create_task(self._callbacks[msg.msg_type](msg))
+                running_tasks.add(task)
+                task.add_done_callback(lambda x: running_tasks.remove(x))
 
     def publish(self, data: PublishMessage):
         data = data.to_json()
@@ -107,6 +110,6 @@ class PublishSubscribe:
 
 def register_publish_subscribe(app: sanic.Sanic, publish_subscribe: PublishSubscribe):
     @app.before_server_start
-    async def websocket_dispatch(*args):
+    async def websocket_dispatch(app: sanic.Sanic, loop):
         await publish_subscribe.open_pipes()
-        asyncio.create_task(publish_subscribe.subscribe())
+        app.ctx.subscribe_task = asyncio.create_task(publish_subscribe.subscribe())

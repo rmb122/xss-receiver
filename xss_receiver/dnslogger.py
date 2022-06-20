@@ -134,9 +134,12 @@ async def start_listen_dns(addr: typing.Tuple[str, int] = ('0.0.0.0', 53)):
 
     sck = await create_async_udp_socket(sock=inner_sck)
 
+    running_tasks = set()
     while True:
         data, remote_addr = await sck.recvfrom()
-        asyncio.create_task(process_packet(sck, data, remote_addr))
+        task = asyncio.create_task(process_packet(sck, data, remote_addr))
+        running_tasks.add(task)
+        task.add_done_callback(lambda x: running_tasks.remove(x))
 
 
 def fork_and_start_listen_dns(addr: typing.Tuple[str, int] = ('0.0.0.0', 53)):

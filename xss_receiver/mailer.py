@@ -10,8 +10,10 @@ from xss_receiver import system_config
 from xss_receiver.database import session_maker
 from xss_receiver.utils import add_system_log
 
+_send_mail_tasks = set()
 
-async def send_mail(path, content):
+
+def send_mail(path, content):
     smtp = aiosmtplib.SMTP(system_config.SEND_MAIL_SMTP_HOST, system_config.SEND_MAIL_SMTP_PORT,
                            use_tls=system_config.SEND_MAIL_SMTP_SSL)
 
@@ -32,4 +34,6 @@ async def send_mail(path, content):
             await add_system_log(db_session, f"Mail send error [{str(e)}]", constants.LOG_TYPE_MAIL_SEND_ERROR)
             await db_session.close()
 
-    asyncio.create_task(login_and_send())
+    task = asyncio.create_task(login_and_send())
+    _send_mail_tasks.add(task)
+    task.add_done_callback(lambda x: _send_mail_tasks.remove(x))

@@ -56,7 +56,7 @@ async def mapping(request: sanic.Request, path=''):
                 upload_file = request.files[file_key][0]
                 if system_config.TEMP_FILE_SAVE:
                     save_name = random_string(32)
-                    asyncio.create_task(write_file(join(system_config.TEMP_FILE_PATH, save_name), upload_file.body))
+                    await write_file(join(system_config.TEMP_FILE_PATH, save_name), upload_file.body)
                 else:
                     save_name = None
                 file[file_key] = {'filename': upload_file.name, 'save_name': save_name}
@@ -84,10 +84,10 @@ async def mapping(request: sanic.Request, path=''):
         publish_subscribe.publish(message)
 
     if rule.send_mail:
-        asyncio.create_task(send_mail(path, f"Client IP: {client_ip}\n\n"
-                                            f"Header: {dumps(dict(request.headers), indent=4)}\n\n"
-                                            f"Args: {dumps(dict(request.args), indent=4)}\n\n"
-                                            f"Body: {raw_body_str}"))
+        send_mail(path, f"Client IP: {client_ip}\n\n"
+                        f"Header: {dumps(dict(request.headers), indent=4)}\n\n"
+                        f"Args: {dumps(dict(request.args), indent=4)}\n\n"
+                        f"Body: {raw_body_str}")
 
     filename = secure_filename_with_directory(rule.filename)
     filepath = join(system_config.UPLOAD_PATH, filename)

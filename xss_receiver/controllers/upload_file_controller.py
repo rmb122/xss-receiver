@@ -23,7 +23,7 @@ async def add(request: sanic.Request):
         filename = secure_filename_with_directory(file.name)
         path = join(system_config.UPLOAD_PATH, filename)
         if not exists(path):
-            asyncio.create_task(write_file(path, file.body))
+            await write_file(path, file.body)
             return json(Response.success('上传成功'))
         else:
             return json(Response.failed('已存在同名文件'))

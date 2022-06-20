@@ -64,6 +64,8 @@ class Config:
     MAX_PREVIEW_SIZE: int
     MAX_TEMP_UPLOAD_SIZE: int
 
+    _running_setter_tasks: set
+
     async def _init_config_table(self):
         db_session = session_maker()
 
@@ -138,6 +140,7 @@ class Config:
         await engine.dispose()
 
     def __init__(self):
+        self._running_setter_tasks = set()
         asyncio.run(self._init_config_table())
         asyncio.run(self._load_configs())
         asyncio.run(self._init_admin())
@@ -157,7 +160,9 @@ class Config:
                 await db_session.commit()
                 await db_session.close()
 
-            asyncio.create_task(_update_database())
+            task = asyncio.create_task(_update_database())
+            self._running_setter_tasks.add(task)
+            task.add_done_callback(lambda x: self._running_setter_tasks.remove(task))
         else:
             raise Exception(f'Config key {key} not existed or not mutable')
 
