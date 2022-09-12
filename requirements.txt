@@ -7,6 +7,6 @@ aiosmtplib~=1.1.6
 PyJWT~=2.3.0
 aiomysql~=0.0.22
 ipaddr~=2.2.0
-asyncudp~=0.6.0
+asyncudp~=0.7.0
 dnslib~=0.9.19
 pylru~=1.2.1

@@ -1,18 +1,17 @@
+import aiofiles
 import asyncio
+import asyncudp
 import hashlib
+import jinja2.sandbox
 import json
 import os
 import os.path
 import random
+import sanic
 import shutil
 import typing
 import urllib.parse
 from functools import wraps
-
-import aiofiles
-import asyncudp
-import jinja2.sandbox
-import sanic
 from werkzeug.utils import secure_filename
 
 from xss_receiver import models
@@ -247,10 +246,6 @@ async def add_system_log(db_session, content, log_type):
     system_log = models.SystemLog(log_content=content, log_type=log_type)
     db_session.add(system_log)
     await db_session.commit()
-
-
-# patch asyncudp
-asyncudp._SocketProtocol.error_received = lambda self, exc: None
 
 
 async def create_async_udp_socket(local_addr=None, remote_addr=None, sock=None):
