@@ -1,3 +1,5 @@
+-i https://mirrors.bfsu.edu.cn/pypi/web/simple/
+
 aiofiles~=0.8.0
 Jinja2~=3.0.3
 sanic~=21.12.1
@@ -10,3 +12,5 @@ ipaddr~=2.2.0
 asyncudp~=0.7.0
 dnslib~=0.9.19
 pylru~=1.2.1
+dukpy~=0.2.3
+sanic-cors~=2.2.0

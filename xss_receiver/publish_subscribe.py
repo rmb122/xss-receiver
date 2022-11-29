@@ -56,7 +56,12 @@ class PublishSubscribe:
 
         self._duplex_list = []
         self._opened_txs = []
-        self._worker_num = get_worker_num()
+
+        if not system_config.APP_DEBUG:
+            self._worker_num = get_worker_num()
+        else:
+            # DEBUG 模式下 worker_num = 1
+            self._worker_num = 1
 
         if self._worker_num > 1 and os.name != "posix":
             self._worker_num = 1

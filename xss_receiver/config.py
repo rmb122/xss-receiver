@@ -21,6 +21,8 @@ _running_setter_tasks = set()
 class Config:
     # name: [from_env, public, mutable, default_value, comment]
     _CONFIG_KEYS: typing.Dict[str, typing.Tuple[bool, bool, bool, typing.Any, str]] = {
+        'APP_DEBUG': [True, False, False, False, '调试模式'],
+
         'INIT_USER': [True, False, False, 'admin:admin', '默认账户密码'],
         'FRONTEND_DIR': [True, False, False, '/dev/shm', '静态资源路径'],
         'SECRET_KEY': [True, False, False, os.urandom(32), ''],
@@ -43,6 +45,8 @@ class Config:
         'MAX_PREVIEW_SIZE': [False, True, True, 1048576, '最大预览大小'],
         'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576, '最大临时文件上传大小']
     }
+
+    APP_DEBUG: bool
 
     FRONTEND_DIR: str
     PASSWORD_SALT: str

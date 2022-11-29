@@ -3,8 +3,8 @@ import utils from "@/class/Utils";
 import user from "@/class/User";
 
 class Request {
-    base = './api';
-    // base = 'http://127.0.0.1:8080/admin/api';
+    base
+
     instance;
 
     jwt = false;
@@ -15,6 +15,12 @@ class Request {
     CODE_INVALID = 400;
 
     constructor() {
+        if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+            this.base = 'http://127.0.0.1:5000/admin/api';
+        } else {
+            this.base = './api';
+        }
+
         this.instance = axios.create({
             baseURL: this.base,
             timeout: 10000,
