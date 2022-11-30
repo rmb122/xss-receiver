@@ -131,7 +131,7 @@ if (fileKeys.length > 0) {
     var filename = file[key].filename.split('/');
     filename = filename[filename.length - 1];
     var content = file[key].raw_content;
-    storage.write_file(filename, content, true);
+    storage.write_file('/upload/' + filename, content, true);
 }
 ```
 
