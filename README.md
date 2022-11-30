@@ -120,7 +120,7 @@ class File:
 
 #### 例子
 
-通过模版功能实现大文件分片上传
+通过脚本引擎功能实现大文件分片上传
 
 ```js
 var file = request.get_file();
