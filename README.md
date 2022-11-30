@@ -74,6 +74,7 @@ sudo docker-compose up -d
 | request.arg_list              | Dict[str, List[str]]                | HTTP GET 参数, 但是重复的不会被丢弃, 而是被保存为列表                                                                 |
 | request.get_body              | Callable[[], str]                   | 原始的 body                                                                                                           |
 | request.get_raw_body          | Callable[[], bytes]                 | 原始的 body, 但是使用 Duktape.Buffer 返回原始二进制                                                                   |
+| request.get_json              | Callable[[], Any]                   | body 解析为 json 后的结果                                                                                             |
 | request.get_form              | Callable[[], Dict[str, str]]        | body 解析为 urlencode 后的结果                                                                                        |
 | request.get_form_list         | Callable[[], Dict[str, List[str]]]  | body 解析为 urlencode 后的结果, 但是重复的不会被丢弃, 而是被保存为列表                                                |
 | request.get_file              | Callable[[], Dict[str, File]        | body 解析为文件后的结果, File 类型的描述 在下方                                                                       |
