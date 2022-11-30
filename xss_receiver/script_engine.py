@@ -200,7 +200,7 @@ class ScriptEngine:
 
         self.interpreter.export_function(
             '_engine.request.get_file',
-            lambda: dict(map(lambda kv: (kv[0], _file_to_dict(kv[1][0])), request.files.items()))
+            lambda: dict(map(lambda kv: (kv[0], _file_to_dict(kv[1][-1])), request.files.items()))
         )
         self.interpreter.export_function(
             '_engine.request.get_file_list',
