@@ -1,5 +1,4 @@
-import asyncio
-import typing
+import traceback
 from base64 import b64encode
 from json import dumps
 from os.path import exists, join
@@ -14,8 +13,9 @@ from xss_receiver.constants import ALLOWED_METHODS
 from xss_receiver.mailer import send_mail
 from xss_receiver.models import HttpRule, HttpAccessLog
 from xss_receiver.publish_subscribe import PublishMessage
-from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, render_dynamic_template, read_file, \
-    generate_dynamic_template_globals, add_system_log, secure_filename_with_directory
+from xss_receiver.script_engine import ScriptEngine
+from xss_receiver.utils import process_headers, random_string, fix_upper_case, write_file, filter_list, read_file, \
+    add_system_log, secure_filename_with_directory
 
 index_controller = sanic.Blueprint('index_controller', __name__)
 
@@ -94,15 +94,15 @@ async def mapping(request: sanic.Request, path=''):
     if exists(filepath):
         if rule.rule_type == constants.RULE_TYPE_DYNAMIC_TEMPLATE:
             response = sanic.HTTPResponse('', 200, {}, 'text/html; charset=utf-8')
-            extra_output = []
-            _globals = generate_dynamic_template_globals(
-                system_config, request, response, client_ip, client_port, path, method, header, arg, raw_body_str, file, extra_output
-            )
-            template_result, error = await render_dynamic_template((await read_file(filepath)).decode(), _globals)
-            response.body = template_result.encode() + b''.join(extra_output)
 
-            if error is not None:
-                log_content = f'Template render error [{error}] in [{path}]'
+            try:
+                engine = ScriptEngine(request, response)
+                engine.eval((await read_file(filepath)).decode())
+            except Exception as e:
+                if system_config.APP_DEBUG:
+                    traceback.print_exc()
+
+                log_content = f'Script running error [{e}] in [{path}]'
                 await add_system_log(request.ctx.db_session, log_content, constants.LOG_TYPE_LOGIN)
 
         elif rule.rule_type == constants.RULE_TYPE_STATIC_FILE:

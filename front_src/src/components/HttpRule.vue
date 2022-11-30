@@ -293,8 +293,8 @@ export default {
                 value: utils.rule_type.RULE_TYPE_STATIC_FILE,
                 label: '静态文件'
             }, {
-                value: utils.rule_type.RULE_TYPE_DYNAMIC_TEMPLATE,
-                label: '动态模版'
+                value: utils.rule_type.RULE_TYPE_DYNAMIC_SCRIPT,
+                label: '动态脚本'
             }],
             suggestions_files: null
         };

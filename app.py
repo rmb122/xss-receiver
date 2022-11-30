@@ -6,5 +6,5 @@ if __name__ == "__main__":
     else:
         from sanic_cors import CORS
 
-        CORS(app)
+        CORS(app, resources={r"/*": {"origins": "http://127.0.0.1:8080"}})
         app.run(host='127.0.0.1', port=5000, fast=False, access_log=True, debug=True)

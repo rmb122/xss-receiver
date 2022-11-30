@@ -1,17 +1,14 @@
-import aiofiles
 import asyncio
-import asyncudp
 import hashlib
-import jinja2.sandbox
-import json
 import os
 import os.path
 import random
-import sanic
-import shutil
 import typing
-import urllib.parse
 from functools import wraps
+
+import aiofiles
+import asyncudp
+import sanic
 from werkzeug.utils import secure_filename
 
 from xss_receiver import models
@@ -107,139 +104,10 @@ def fix_upper_case(header_dict: typing.Dict):
     return output_dict
 
 
-async def render_dynamic_template(template: str, _globals: typing.Dict[str, typing.Any]):
-    env = jinja2.sandbox.SandboxedEnvironment(extensions=['jinja2.ext.do'], enable_async=True)
-    result = ""
-    error = None
-
-    try:
-        result = await env.from_string(template).render_async(_globals)
-    except Exception as e:
-        error = e
-
-    return result, error
-
-
 def secure_filename_with_directory(filename: str):
     parts = filename.split(os.sep)
     full_path = os.path.join(*[secure_filename(i) for i in parts])
     return full_path.strip(os.sep)  # 应该是不需要的, 以防万一
-
-
-def generate_dynamic_template_globals(system_config, request: sanic.Request, response: sanic.HTTPResponse, client_ip, client_port, path, method, header, arg, body, file, extra_output):
-    _globals = {}
-
-    def add_header(name, value):
-        if isinstance(name, str) and isinstance(value, str):
-            response.headers.add(name, value)
-
-    def pop_header(name):
-        if isinstance(name, str):
-            response.headers.pop(name)
-
-    def set_status(code):
-        if isinstance(code, int):
-            response.status = code
-
-    def write_output(output):
-        if isinstance(output, bytes):
-            extra_output.append(output)
-        elif isinstance(output, str):
-            extra_output.append(output.encode())
-        elif isinstance(output, list):
-            extra_output.append(bytes(output))
-
-    def list_directory(directory_name):
-        if isinstance(directory_name, str):
-            directory_name = secure_filename(directory_name)
-            entries = os.scandir(os.path.join(system_config.UPLOAD_PATH, directory_name))
-            return [(i.name, i.is_dir()) for i in entries]
-
-    def create_directory(directory_name):
-        if isinstance(directory_name, str):
-            directory_name = secure_filename(directory_name)
-            if len(directory_name) > 0:
-                os.mkdir(os.path.join(system_config.UPLOAD_PATH, directory_name))
-
-    def delete_directory(directory_name):
-        if isinstance(directory_name, str):
-            directory_name = secure_filename(directory_name)
-            if len(directory_name) > 0:
-                shutil.rmtree(os.path.join(system_config.UPLOAD_PATH, directory_name))
-
-    def delete_upload_file(filename):
-        if isinstance(filename, str):
-            filename = secure_filename_with_directory(filename)
-            os.unlink(filename)
-
-    async def read_upload_file(filename, binary=False):
-        if isinstance(filename, str) and isinstance(binary, bool):
-            filename = secure_filename_with_directory(filename)
-
-            if binary:
-                read_mode = 'rb'
-            else:
-                read_mode = 'r'
-
-            return await read_file(os.path.join(system_config.UPLOAD_PATH, filename), read_mode)
-
-    async def write_upload_file(filename, content, append=False):
-        if isinstance(filename, str) and isinstance(append, bool) and isinstance(content, (str, bytes)):
-            filename = secure_filename_with_directory(filename)
-
-            if append:
-                write_mode = 'a'
-            else:
-                write_mode = 'w'
-
-            if isinstance(content, bytes):
-                write_mode += 'b'
-
-            return await write_file(os.path.join(system_config.UPLOAD_PATH, filename), content, write_mode)
-
-    def get_request_upload_file(file_key):
-        if isinstance(file_key, str) and file_key in request.files:
-            f = request.files.get(file_key)
-            return f.name, f.body
-
-    def catch_exception(func):
-        def new_func(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception:
-                return None
-
-        return new_func
-
-    _globals['add_header'] = catch_exception(add_header)
-    _globals['pop_header'] = catch_exception(pop_header)
-    _globals['set_status'] = catch_exception(set_status)
-    _globals['write_output'] = catch_exception(write_output)
-
-    _globals['list_directory'] = catch_exception(list_directory)
-    _globals['create_directory'] = catch_exception(create_directory)
-    _globals['delete_directory'] = catch_exception(delete_directory)
-    _globals['delete_upload_file'] = catch_exception(delete_upload_file)
-    _globals['read_upload_file'] = catch_exception(read_upload_file)
-    _globals['write_upload_file'] = catch_exception(write_upload_file)
-    _globals['get_request_upload_file'] = catch_exception(get_request_upload_file)
-
-    _globals['json_encode'] = catch_exception(json.dumps)
-    _globals['json_decode'] = catch_exception(json.loads)
-    _globals['url_encode'] = catch_exception(urllib.parse.quote)
-    _globals['url_decode'] = catch_exception(urllib.parse.unquote)
-    _globals['url_parse_qs'] = catch_exception(urllib.parse.parse_qs)
-
-    _globals['client_ip'] = client_ip
-    _globals['client_port'] = client_port
-    _globals['path'] = path
-    _globals['method'] = method
-    _globals['header'] = header
-    _globals['arg'] = arg
-    _globals['body'] = body
-    _globals['file'] = file
-
-    return _globals
 
 
 async def add_system_log(db_session, content, log_type):

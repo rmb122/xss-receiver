@@ -23,7 +23,7 @@ class Utils {
 
     rule_type = {
         RULE_TYPE_STATIC_FILE: 1,
-        RULE_TYPE_DYNAMIC_TEMPLATE: 2
+        RULE_TYPE_DYNAMIC_SCRIPT: 2
     };
 
     body_type = {

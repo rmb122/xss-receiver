@@ -1,7 +1,6 @@
 -i https://mirrors.bfsu.edu.cn/pypi/web/simple/
 
 aiofiles~=0.8.0
-Jinja2~=3.0.3
 sanic~=21.12.1
 Werkzeug~=2.0.2
 SQLAlchemy~=1.4.29
