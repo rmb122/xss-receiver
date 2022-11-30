@@ -358,7 +358,7 @@ class ScriptEngine:
                 else:
                     raise dukpy.JSRuntimeError("path is invalid")
             else:
-                raise dukpy.JSRuntimeError("path and content should be string")
+                raise dukpy.JSRuntimeError("path should be string")
 
         self.interpreter.export_function('_engine.storage.remove_file', remove_file)
 

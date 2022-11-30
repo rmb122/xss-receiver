@@ -7,7 +7,7 @@
 * 在特定路由上保存访问历史以及携带数据
 * 命中特定路由时发送邮件
 * 动态切换路由及其对应的 payload 文件
-* 根据设置, 响应可以通过模版动态渲染
+* 根据设置, 响应可以通过 js 脚本动态生成
 * 管理、编辑 payload
 * 额外搭载简单的 DNS Log 功能
 * 多用户
@@ -111,6 +111,12 @@ class File:
 | storage.read_file        | Callable[[str, Optional[str]], Union[str, bytes]]        | 读取文件, 第二个参数为读取模式, 如果为 "b", 代表文件内容以二进制形式返回                                      |
 | storage.write_file       | Callable[[str, Union[str, bytes], Optional[bool]], None] | 写入文件, 第二个参数可以为 Buffer 或者 Duktape.Buffer, 代表写入二进制. 而第三个参数代表是否以 append 模式写入 |
 | storage.remove_file      | Callable[[str], None]                                    | 删除文件                                                                                                      |
+
+#### 其他
+
+| 变量名  | 类型                    | 备注                                                           |
+| ------- | ----------------------- | -------------------------------------------------------------- |
+| require | Callable[[str], Module] | 类似 node, 可以通过此函数 require 文件管理目录下的其他 js 文件 |
 
 #### 例子
 
