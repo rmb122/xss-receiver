@@ -71,7 +71,7 @@ async def mapping(request: sanic.Request, path=''):
 
     if rule.write_log:
         if len(body) > system_config.MAX_TEMP_UPLOAD_SIZE:
-            body = ""
+            body = body[:system_config.MAX_TEMP_UPLOAD_SIZE]
             body_type = constants.BODY_TYPE_TOO_LONG
 
         access_log = HttpAccessLog(path=path, client_ip=client_ip, client_port=client_port, method=method, arg=arg,
@@ -97,7 +97,7 @@ async def mapping(request: sanic.Request, path=''):
 
             try:
                 engine = ScriptEngine(request, response)
-                engine.eval((await read_file(filepath)).decode())
+                await engine.eval((await read_file(filepath)).decode())
             except Exception as e:
                 if system_config.APP_DEBUG:
                     traceback.print_exc()

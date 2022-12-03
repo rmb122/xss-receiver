@@ -60,7 +60,7 @@ sudo docker-compose up -d
 #### request
 
 获取请求信息, 需要注意获取请求体时, 因为不同 Content-Type 需要不同解析方式, 所以均使用函数调用.  
-另外 bytes 对应 Buffer 或者 Duktape.Buffer.
+另外 bytes 对应 Buffer 或者 Uint8Array.
 
 | 变量名                        | 类型                                | 备注                                                                                                                  |
 | ----------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -73,7 +73,7 @@ sudo docker-compose up -d
 | request.arg                   | Dict[str, str]                      | HTTP GET 参数                                                                                                         |
 | request.arg_list              | Dict[str, List[str]]                | HTTP GET 参数, 但是重复的不会被丢弃, 而是被保存为列表                                                                 |
 | request.get_body              | Callable[[], str]                   | 原始的 body                                                                                                           |
-| request.get_raw_body          | Callable[[], bytes]                 | 原始的 body, 但是使用 Duktape.Buffer 返回原始二进制                                                                   |
+| request.get_raw_body          | Callable[[], bytes]                 | 原始的 body, 但是使用 Uint8Array 返回原始二进制                                                                       |
 | request.get_json              | Callable[[], Any]                   | body 解析为 json 后的结果                                                                                             |
 | request.get_form              | Callable[[], Dict[str, str]]        | body 解析为 urlencode 后的结果                                                                                        |
 | request.get_form_list         | Callable[[], Dict[str, List[str]]]  | body 解析为 urlencode 后的结果, 但是重复的不会被丢弃, 而是被保存为列表                                                |
@@ -94,24 +94,24 @@ class File:
 
 发送响应信息
 
-| 变量名                   | 类型                                         | 备注                                                                                                            |
-| ------------------------ | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| response.set_status_code | Callable[[int], None]                        | 设置响应状态代码                                                                                                |
-| response.set_header      | Callable[[str, Union[str, List[str]]], None] | 设置响应头, 参数为响应头的 name 和 value, 其中 value 可以为字符串列表, 代表设置多个 header                      |
-| response.send            | Callable[[str, Union[str, bytes]], None]     | 设置响应体, 其中参数可以为 Buffer 或者 Duktape.Buffer, 代表直接发送二进制内容. 多次调用此函数, 结果会按顺序拼接 |
+| 变量名                   | 类型                                         | 备注                                                                                                        |
+| ------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| response.set_status_code | Callable[[int], None]                        | 设置响应状态代码                                                                                            |
+| response.set_header      | Callable[[str, Union[str, List[str]]], None] | 设置响应头, 参数为响应头的 name 和 value, 其中 value 可以为字符串列表, 代表设置多个 header                  |
+| response.send            | Callable[[str, Union[str, bytes]], None]     | 设置响应体, 其中参数可以为 Buffer 或者 Uint8Array, 代表直接发送二进制内容. 多次调用此函数, 结果会按顺序拼接 |
 
 #### storage
 
 操作文件管理目录下的文件
 
-| 变量名                   | 类型                                                     | 备注                                                                                                          |
-| ------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| storage.list_directory   | Callable[[str], List[str]]                               | 列目录                                                                                                        |
-| storage.create_directory | Callable[[str], None]                                    | 创建目录                                                                                                      |
-| storage.remove_directory | Callable[[str, Optional[bool]], None]                    | 删除目录, 第二个参数代表是否递归删除                                                                          |
-| storage.read_file        | Callable[[str, Optional[str]], Union[str, bytes]]        | 读取文件, 第二个参数为读取模式, 如果为 "b", 代表文件内容以二进制形式返回                                      |
-| storage.write_file       | Callable[[str, Union[str, bytes], Optional[bool]], None] | 写入文件, 第二个参数可以为 Buffer 或者 Duktape.Buffer, 代表写入二进制. 而第三个参数代表是否以 append 模式写入 |
-| storage.remove_file      | Callable[[str], None]                                    | 删除文件                                                                                                      |
+| 变量名                   | 类型                                                     | 备注                                                                                                      |
+| ------------------------ | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| storage.list_directory   | Callable[[str], List[str]]                               | 列目录                                                                                                    |
+| storage.create_directory | Callable[[str], None]                                    | 创建目录                                                                                                  |
+| storage.remove_directory | Callable[[str, Optional[bool]], None]                    | 删除目录, 第二个参数代表是否递归删除                                                                      |
+| storage.read_file        | Callable[[str, Optional[str]], Union[str, bytes]]        | 读取文件, 第二个参数为读取模式, 如果为 "b", 代表文件内容以二进制形式返回                                  |
+| storage.write_file       | Callable[[str, Union[str, bytes], Optional[bool]], None] | 写入文件, 第二个参数可以为 Buffer 或者 Uint8Array, 代表写入二进制. 而第三个参数代表是否以 append 模式写入 |
+| storage.remove_file      | Callable[[str], None]                                    | 删除文件                                                                                                  |
 
 #### 其他
 

@@ -42,8 +42,9 @@ class Config:
         'SEND_MAIL_SMTP_HOST': [False, True, True, '', 'SMTP 服务器地址'],
         'SEND_MAIL_SMTP_PORT': [False, True, True, 465, 'SMTP 服务器端口'],
         'SEND_MAIL_SMTP_SSL': [False, True, True, True, 'SMTP 是否启用 SSL'],
+        'SCRIPT_TIMEOUT': [False, True, True, 3, '脚本最大运行时间'],
         'MAX_PREVIEW_SIZE': [False, True, True, 1048576, '最大预览大小'],
-        'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 1048576, '最大临时文件上传大小']
+        'MAX_TEMP_UPLOAD_SIZE': [False, True, True, 65535, '最大临时文件上传大小']
     }
 
     APP_DEBUG: bool
@@ -66,6 +67,7 @@ class Config:
     SEND_MAIL_SMTP_HOST: str
     SEND_MAIL_SMTP_PORT: int
     SEND_MAIL_SMTP_SSL: bool
+    SCRIPT_TIMEOUT: int
     MAX_PREVIEW_SIZE: int
     MAX_TEMP_UPLOAD_SIZE: int
 

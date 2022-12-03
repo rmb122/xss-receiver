@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os.path
 import shutil
@@ -16,7 +17,7 @@ function _engine_parse_file(file) {
 }
 
 function _engine_is_buffer(v) {
-    return typeof v === 'buffer' || v instanceof Buffer || v instanceof Duktape.Buffer;
+    return typeof v === 'buffer' || v instanceof Buffer || v instanceof Uint8Array;
 }
 
 var request = {
@@ -364,5 +365,7 @@ class ScriptEngine:
 
         self.interpreter.evaljs(_prelude_js)
 
-    def eval(self, script: str):
-        self.interpreter.evaljs(script)
+    async def eval(self, script: str):
+        await asyncio.get_running_loop().run_in_executor(
+            None, self.interpreter.evaljs, script, system_config.SCRIPT_TIMEOUT
+        )

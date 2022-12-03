@@ -137,7 +137,9 @@
                                 <el-divider content-position="left">POST</el-divider>
                                 <el-row type="flex" justify="center">
                                     <el-col :span="16" style="text-align: center">
-                                        数据过长, 无法保存
+                                      <a href="javascript:" style="color: dodgerblue;"
+                                         v-clipboard:success="copy_success"
+                                         v-clipboard:copy="scope.row.body_json['TOO_LONG_DATA']">数据过长, 点击复制截断后内容</a>
                                     </el-col>
                                 </el-row>
                             </template>
@@ -380,7 +382,7 @@ export default {
                         body_keys = ["ESCAPED_DATA"];
                         break;
                     case utils.body_type.BODY_TYPE_TOO_LONG:
-                        body_json = "TOO_LONG_DATA";
+                        body_json = {"TOO_LONG_DATA": body_raw};
                         body_keys = ["TOO_LONG_DATA"];
                         break;
                 }
