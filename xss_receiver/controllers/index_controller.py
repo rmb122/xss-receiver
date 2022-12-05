@@ -45,8 +45,8 @@ async def mapping(request: sanic.Request, path=''):
     file = {}
     raw_body_str = request.body.decode('utf-8', 'ignore')
 
-    content_type = request.headers.get('Content-Type', '').lower()
-    if content_type[:19] == 'multipart/form-data':
+    content_type = request.headers.get('Content-Type', '').lower().split(';', 1)[0].strip()
+    if content_type == 'multipart/form-data':
         body_type = constants.BODY_TYPE_NORMAL
         body = dumps(filter_list(dict(request.form)))
 
@@ -70,8 +70,10 @@ async def mapping(request: sanic.Request, path=''):
             body_type = constants.BODY_TYPE_ESCAPED
 
     if rule.write_log:
-        if len(body) > system_config.MAX_TEMP_UPLOAD_SIZE:
-            body = body[:system_config.MAX_TEMP_UPLOAD_SIZE]
+        body_binary = body.encode()
+        if len(body_binary) > system_config.MAX_TEMP_UPLOAD_SIZE:
+            body_binary = body_binary[:system_config.MAX_TEMP_UPLOAD_SIZE]
+            body = body_binary.decode(errors='ignore')
             body_type = constants.BODY_TYPE_TOO_LONG
 
         access_log = HttpAccessLog(path=path, client_ip=client_ip, client_port=client_port, method=method, arg=arg,

@@ -53,7 +53,7 @@ sudo docker-compose up -d
 
 如果将规则类型设置为动态脚本, 那么规则所指向的文件会被作为 js 脚本, 使用 duktape 来运行, 语法和相关 API 可以参考[官方文档](https://duktape.org/guide.html),  
 需要注意 duktape 语法为 ES5, 不支持 ES6 及其之后的语法, 例如 `let` 声明变量等等, 这里不再对 js 运行时额外进行介绍.  
-模版中会被注入常用的变量和函数, 相关实现在 `xss_receiver/script_engine.py`
+脚本上下文中会被注入常用的变量和函数, 相关实现在 `xss_receiver/script_engine.py`
 
 这里介绍相关 API 的使用方法
 
@@ -175,7 +175,7 @@ done
 
 ### 系统日志
 
-其中除了有登录日志外, 系统和模版渲染出现的错误也会记录在其中
+其中除了有登录日志外, 系统和脚本运行时出现的错误也会记录在其中
 
 ### 用户
 
