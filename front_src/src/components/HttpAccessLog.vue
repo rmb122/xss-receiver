@@ -110,8 +110,7 @@
                                     </el-row>
                                 </template>
                                 <template v-else>
-                                    <template
-                                        v-if="scope.row.body_json !== '' && typeof(scope.row.body_json) === 'object' && Object.keys(scope.row.body_json).length !== 0">
+                                    <template v-if="scope.row.body_json !== null">
                                         <el-divider content-position="left">POST</el-divider>
                                         <json-viewer
                                             :value="scope.row.body_json"
@@ -239,7 +238,7 @@
 <script>
 import http_access_log from "../class/HttpAccessLog";
 import UAParser from "ua-parser-js";
-import qs from "querystring";
+import qs from "qs";
 import request from "../class/Request";
 import Vue from 'vue';
 import time from '../class/Utils';
@@ -331,9 +330,9 @@ export default {
                 }
 
                 let content_type = log.header['Content-Type'];
-                let body_keys = log.body;
+                let body_keys = [];
                 let body_raw = log.body;
-                let body_json = {};
+                let body_json = null;
 
                 switch (log.body_type) {
                     case utils.body_type.BODY_TYPE_NORMAL:
@@ -354,7 +353,11 @@ export default {
                                 case "application/json":
                                     try {
                                         body_json = JSON.parse(body_raw);
-                                        body_keys = Object.keys(body_json);
+                                        if (typeof body_json === 'object' && body_json !== null && !Array.isArray(body_json)) {
+                                            body_keys = Object.keys(body_json);
+                                        } else {
+                                            body_keys = ["JSON_RAW_VALUE"];
+                                        }
                                     } catch (e) {
                                         body_json = {"JSON_PARSE_ERROR": body_raw};
                                         body_keys = ["JSON_PARSE_ERROR"];
