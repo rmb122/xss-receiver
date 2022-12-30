@@ -128,7 +128,7 @@
 
           <MonacoEditor ref="editor" v-model="editor_content" v-loading="editor_loading"
                         :filename="editor_curr_filename" :amd-require="editor_require"
-                        style="min-height: 80vh; border: 1px darkgray solid;"
+                        style="min-height: 80vh; border: 1px solid #DCDFE6;"
                         :readonly="editor_readonly"
                         :options="{automaticLayout: true, scrollBeyondLastLine: true}" />
         </el-dialog>
