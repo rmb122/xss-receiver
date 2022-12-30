@@ -11,11 +11,11 @@
   <body>
     <script src="https://cdn.staticfile.org/vue/2.6.1/vue.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.staticfile.org/element-ui/2.13.0/index.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.staticfile.org/ace/1.4.7/ace.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.staticfile.org/ace/1.4.7/ext-language_tools.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.staticfile.org/ace/1.4.7/ext-searchbox.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.staticfile.org/ace/1.4.7/theme-tomorrow.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.staticfile.org/ace/1.4.7/ext-modelist.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.staticfile.org/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script>
+        require.config({ paths: { vs: 'https://cdn.staticfile.org/monaco-editor/0.34.1/min/vs' } });
+        window.monacoRequire = require;
+    </script>
 
     <noscript>
       <strong>We're sorry but xss-receiver-front doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>

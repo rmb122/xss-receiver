@@ -225,15 +225,13 @@
 
         <el-dialog
             title="编辑文件"
-            :visible.sync="edit_file_dialog_visible"
+            :visible.sync="editor_file_dialog_visible"
             :close-on-click-modal="false"
-            width="80%" top="50px"
-            custom-class="no_upper_padding"
-            @open="editor_init"
-            @opened="dialog_opened">
+            width="90%" top="30px"
+            custom-class="no_upper_padding">
             <el-row type="flex" justify="space-between" style="margin-bottom: 10px">
                 <el-col :span="20" style="align-self: center">
-                    {{ edit_curr_filename }}
+                  {{ editor_curr_filename }}
                 </el-col>
                 <el-col :span="4" style="text-align: right">
                     <el-button type="primary" style="display: inline" @click="submit_file(false)">保存</el-button>
@@ -241,7 +239,11 @@
                 </el-col>
             </el-row>
 
-            <div id="ace_editor" v-loading="editor_loading" style="min-height: 700px"></div>
+            <MonacoEditor ref="editor" v-model="editor_content" v-loading="editor_loading"
+                          :filename="editor_curr_filename" :amd-require="editor_require"
+                          style="min-height: 80vh; border: 1px darkgray solid;"
+                          :readonly="editor_readonly"
+                          :options="{automaticLayout: true, scrollBeyondLastLine: true}" />
         </el-dialog>
     </div>
 </template>
@@ -254,6 +256,7 @@ import file from "../class/UploadFile";
 import utils from "../class/Utils";
 import request from "../class/Request";
 import upload_file from "../class/UploadFile";
+
 
 export default {
     name: "HttpRule",
@@ -282,13 +285,6 @@ export default {
                 rule_type: utils.rule_type.RULE_TYPE_STATIC_FILE
             },
             rule_loading: false,
-            edit_file_dialog_visible: false,
-            editor_loading: false,
-            edit_curr_filename: "",
-            ace_editor: null,
-            fetch_promise: null,
-            editor_inited: false,
-            editor_acquire_resolver: null,
             rule_type_options: [{
                 value: utils.rule_type.RULE_TYPE_STATIC_FILE,
                 label: '静态文件'
@@ -296,7 +292,14 @@ export default {
                 value: utils.rule_type.RULE_TYPE_DYNAMIC_SCRIPT,
                 label: '动态脚本'
             }],
-            suggestions_files: null
+            suggestions_files: null,
+
+            editor_file_dialog_visible: false,
+            editor_loading: false,
+            editor_curr_filename: "",
+            editor_content: "",
+            editor_require: window.monacoRequire,
+            editor_readonly: false,
         };
     },
     async mounted() {
@@ -453,62 +456,33 @@ export default {
             }
         },
         async edit_file(row) {
-            this.edit_curr_filename = row.filename;
+            this.editor_curr_filename = row.filename;
             this.editor_loading = true;
-            this.fetch_promise = file.preview_file(this.edit_curr_filename);
-            this.edit_file_dialog_visible = true;
-        },
-        async editor_init() {
-            if (!this.editor_inited) {
-                await new Promise((resolve => {
-                    this.editor_acquire_resolver = resolve;
-                }));
-                this.editor_inited = true;
-            }
-
-            window.ace.require("ace/ext/language_tools");
-            this.ace_editor = window.ace.edit("ace_editor");
-            let modelist = window.ace.require("ace/ext/modelist");
-            let mode = modelist.getModeForPath(this.edit_curr_filename).mode;
-            this.ace_editor.setTheme("ace/theme/tomorrow");
-            this.ace_editor.session.setMode(mode);
-            this.ace_editor.setFontSize(15);
-            this.ace_editor.setOptions({
-                enableBasicAutocompletion: true,
-                enableSnippets: true,
-                enableLiveAutocompletion: true
-            });
-
-            let res = await this.fetch_promise;
-            let editor = this.ace_editor;
-
-            if (res.code === request.CODE_SUCCESS) {
-                this.ace_editor.setValue(res.payload, -1);
-                editor.setReadOnly(false);
+            this.editor_file_dialog_visible = true;
+            let resp = (await file.preview_file(this.editor_curr_filename));
+            if (resp.code === request.CODE_SUCCESS) {
+                this.editor_content = resp.payload;
+                this.editor_readonly = false;
             } else {
-                this.ace_editor.setValue(res.msg, -1);
-                editor.setReadOnly(true);
+                this.editor_content = resp.msg;
+                this.editor_readonly = true;
             }
-
             this.editor_loading = false;
         },
-        async dialog_opened() {
-            this.editor_acquire_resolver();
-        },
         async submit_file(exit) {
-            if (this.edit_curr_filename.trim() === "") {
+            if (this.editor_curr_filename.trim() === "") {
                 this.$message.error("文件名不能为空");
                 return;
             }
-            let content = this.ace_editor.getValue();
-            if (this.ace_editor.getReadOnly()) {
-                this.edit_file_dialog_visible = false;
+            let content = this.$refs.editor.value;
+            if (this.editor_readonly) {
+                this.editor_file_dialog_visible = false;
                 return;
             }
-            let res = await file.modify_file(this.edit_curr_filename, null, content);
+            let res = await file.modify_file(this.editor_curr_filename, null, content);
             if (res.code === request.CODE_SUCCESS) {
                 if (exit) {
-                    this.edit_file_dialog_visible = false;
+                    this.editor_file_dialog_visible = false;
                 }
                 this.$message.success(res.msg);
             } else {

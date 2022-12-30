@@ -112,15 +112,13 @@
 
         <el-dialog
             title="编辑文件"
-            :visible.sync="edit_file_dialog_visible"
+            :visible.sync="editor_file_dialog_visible"
             :close-on-click-modal="false"
-            width="80%" top="50px"
-            custom-class="file_dialog"
-            @open="editor_init"
-            @opened="dialog_opened">
+            width="90%" top="30px"
+            custom-class="file_dialog">
             <el-row type="flex" justify="space-between">
                 <el-col :span="20">
-                    <el-input v-model="edit_curr_filename" style="margin-bottom: 10px"></el-input>
+                    <el-input v-model="editor_curr_filename" style="margin-bottom: 10px"></el-input>
                 </el-col>
                 <el-col :span="4" style="text-align: right">
                     <el-button type="primary" style="display: inline" @click="submit_file(false)">保存</el-button>
@@ -128,7 +126,11 @@
                 </el-col>
             </el-row>
 
-            <div id="ace_editor" v-loading="editor_loading" style="min-height: 700px"></div>
+          <MonacoEditor ref="editor" v-model="editor_content" v-loading="editor_loading"
+                        :filename="editor_curr_filename" :amd-require="editor_require"
+                        style="min-height: 80vh; border: 1px darkgray solid;"
+                        :readonly="editor_readonly"
+                        :options="{automaticLayout: true, scrollBeyondLastLine: true}" />
         </el-dialog>
     </div>
 </template>
@@ -143,16 +145,16 @@ export default {
     data() {
         return {
             file_loading: false,
-            edit_file_dialog_visible: false,
             files: [],
+
+            editor_new_file: false,
+            editor_file_dialog_visible: false,
             editor_loading: false,
-            edit_original_filename: "",
-            edit_curr_filename: "",
-            edit_new_file: false,
-            ace_editor: null,
-            fetch_promise: null,
-            editor_inited: false,
-            editor_acquire_resolver: null,
+            editor_curr_filename: "",
+            editor_original_filename: "",
+            editor_content: "",
+            editor_require: window.monacoRequire,
+            editor_readonly: false,
         };
     },
     async mounted() {
@@ -235,71 +237,40 @@ export default {
             return Math.max(size, 0.1).toFixed(1) + units[i];
         },
         async edit_file(row) {
-            this.edit_original_filename = row.path;
-            this.edit_curr_filename = row.path;
+            this.editor_original_filename = row.path;
+            this.editor_curr_filename = row.path;
 
             this.editor_loading = true;
-            this.fetch_promise = file.preview_file(this.edit_curr_filename);
-            this.edit_file_dialog_visible = true;
-            this.edit_new_file = false;
-        },
-        async editor_init() {
-            if (!this.editor_inited) {
-                await new Promise((resolve => {
-                    this.editor_acquire_resolver = resolve;
-                }));
-                this.editor_inited = true;
-            }
+            this.editor_file_dialog_visible = true;
+            this.editor_new_file = false;
 
-            window.ace.require("ace/ext/language_tools");
-            this.ace_editor = window.ace.edit("ace_editor");
-            let modelist = window.ace.require("ace/ext/modelist");
-            let mode = modelist.getModeForPath(this.edit_curr_filename).mode;
-            this.ace_editor.setTheme("ace/theme/tomorrow");
-            this.ace_editor.session.setMode(mode);
-            this.ace_editor.setFontSize(15);
-            this.ace_editor.setOptions({
-                enableBasicAutocompletion: true,
-                enableSnippets: true,
-                enableLiveAutocompletion: true
-            });
-
-            if (!this.edit_new_file) {
-                let res = await this.fetch_promise;
-                let editor = this.ace_editor;
-
-                if (res.code === request.CODE_SUCCESS) {
-                    this.ace_editor.setValue(res.payload, -1);
-                    editor.setReadOnly(false);
-                } else {
-                    this.ace_editor.setValue(res.msg, -1);
-                    editor.setReadOnly(true);
-                }
+            let resp = (await file.preview_file(this.editor_curr_filename));
+            if (resp.code === request.CODE_SUCCESS) {
+              this.editor_content = resp.payload;
+              this.editor_readonly = false;
             } else {
-                this.ace_editor.setValue("", -1);
-                this.ace_editor.setReadOnly(false);
+              this.editor_content = resp.msg;
+              this.editor_readonly = true;
             }
+
             this.editor_loading = false;
         },
-        async dialog_opened() {
-            this.editor_acquire_resolver();
-        },
         async submit_file(exit) {
-            if (this.edit_curr_filename.trim() === "") {
+            if (this.editor_curr_filename.trim() === "") {
                 this.$message.error("文件名不能为空");
                 return;
             }
 
-            if (this.edit_new_file) {
-                let f = new File([new Blob([this.ace_editor.getValue()])], this.edit_curr_filename);
+            if (this.editor_new_file) {
+                let f = new File([new Blob([this.editor_content])], this.editor_curr_filename);
                 let res = await file.upload_file(f);
                 if (res.code === request.CODE_SUCCESS) {
                     if (exit) {
-                      this.edit_file_dialog_visible = false;
+                      this.editor_file_dialog_visible = false;
                     } else {
                       // 如果不退出, 切换到编辑模式
-                      this.edit_original_filename = this.edit_curr_filename;
-                      this.edit_new_file = false;
+                      this.editor_original_filename = this.editor_curr_filename;
+                      this.editor_new_file = false;
                     }
                     this.refresh_file();
                     this.$message.success(res.msg);
@@ -308,21 +279,21 @@ export default {
                 }
             } else {
                 let new_filename = "";
-                if (this.edit_original_filename === this.edit_curr_filename) {
+                if (this.editor_original_filename === this.editor_curr_filename) {
                     new_filename = null;
                 } else {
-                    new_filename = this.edit_curr_filename;
+                    new_filename = this.editor_curr_filename;
                 }
-                let content = this.ace_editor.getValue();
-                if (this.ace_editor.getReadOnly()) {
+                let content = this.editor_content;
+                if (this.editor_readonly) {
                     content = null;
                 }
-                let res = await file.modify_file(this.edit_original_filename, new_filename, content);
+                let res = await file.modify_file(this.editor_original_filename, new_filename, content);
                 if (res.code === request.CODE_SUCCESS) {
                     if (exit) {
-                        this.edit_file_dialog_visible = false;
+                        this.editor_file_dialog_visible = false;
                     } else {
-                        this.edit_original_filename = this.edit_curr_filename;
+                        this.editor_original_filename = this.editor_curr_filename;
                     }
 
                     this.refresh_file();
@@ -333,16 +304,18 @@ export default {
             }
         },
         new_file() {
-            this.edit_new_file = true;
-            this.edit_curr_filename = "";
-            this.edit_file_dialog_visible = true;
-            this.editor_loading = true;
+            this.editor_new_file = true;
+            this.editor_curr_filename = "";
+            this.editor_file_dialog_visible = true;
+            this.editor_content = "";
+            this.editor_readonly = false;
         },
         new_file_with_directory(row) {
-            this.edit_new_file = true;
-            this.edit_curr_filename = row.path + "/";
-            this.edit_file_dialog_visible = true;
-            this.editor_loading = true;
+            this.editor_new_file = true;
+            this.editor_curr_filename = row.path + "/";
+            this.editor_file_dialog_visible = true;
+            this.editor_content = "";
+            this.editor_readonly = false;
         },
         async delete_file(row) {
             this.$confirm('确定删除该文件?', '提示', {
