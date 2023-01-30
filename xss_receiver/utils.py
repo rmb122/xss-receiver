@@ -92,6 +92,8 @@ def filter_list(input_dict: typing.Dict):
     for key, value in input_dict.items():
         if isinstance(value, list) and len(value) == 1:
             output_dict[key] = value[0]
+        else:
+            output_dict[key] = value
     return output_dict
 
 

@@ -41,7 +41,8 @@ async def mapping(request: sanic.Request, path=''):
 
     method = request.method
     header = fix_upper_case(dict(request.headers))
-    arg = filter_list(dict(request.args))
+    arg = filter_list(dict(request.get_args(True)))
+
     file = {}
     raw_body_str = request.body.decode('utf-8', 'ignore')
 
