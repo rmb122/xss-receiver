@@ -13,3 +13,4 @@ dnslib~=0.9.19
 pylru~=1.2.1
 dukpy-timeout~=0.0.1
 sanic-cors~=2.2.0
+websockets<11.0
